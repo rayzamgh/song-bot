@@ -13,6 +13,7 @@ from langchain.schema import (
     messages_from_dict,
 )
 
+
 class FirestoreEntityStore(BaseEntityStore):
     """Firestore-backed Entity store.
     """
@@ -41,7 +42,8 @@ class FirestoreEntityStore(BaseEntityStore):
         return f"{self.key_prefix}:{self.session_id}"
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        doc_ref = self.firestore_client.document(f'{self.full_key_prefix}/{key}')
+        doc_ref = self.firestore_client.document(
+            f'{self.full_key_prefix}/{key}')
         doc = doc_ref.get()
         if doc.exists:
             return doc.to_dict().get('value', default)
@@ -51,22 +53,26 @@ class FirestoreEntityStore(BaseEntityStore):
     def set(self, key: str, value: Optional[str]) -> None:
         if not value:
             return self.delete(key)
-        doc_ref = self.firestore_client.document(f'{self.full_key_prefix}/{key}')
+        doc_ref = self.firestore_client.document(
+            f'{self.full_key_prefix}/{key}')
         doc_ref.set({'value': value})
 
     def delete(self, key: str) -> None:
-        doc_ref = self.firestore_client.document(f'{self.full_key_prefix}/{key}')
+        doc_ref = self.firestore_client.document(
+            f'{self.full_key_prefix}/{key}')
         doc_ref.delete()
 
     def exists(self, key: str) -> bool:
-        doc_ref = self.firestore_client.document(f'{self.full_key_prefix}/{key}')
+        doc_ref = self.firestore_client.document(
+            f'{self.full_key_prefix}/{key}')
         return doc_ref.get().exists
 
     def clear(self) -> None:
         # Get a batch instance
         batch = self.firestore_client.batch()
 
-        docs = self.firestore_client.collection(self.full_key_prefix).list_documents()
+        docs = self.firestore_client.collection(
+            self.full_key_prefix).list_documents()
         for doc in docs:
             batch.delete(doc)
 

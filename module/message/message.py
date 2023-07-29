@@ -11,13 +11,11 @@ class MessageModule(BaseModule):
         
         async with message.channel.typing():
             song_said = self.song_agent.run(message)
+
+            print("song_said")
+            print(song_said)
         
             await message.channel.send(song_said)
-
-        # if message.content.startswith("rayza ganteng"):
-        #     await message.channel.send("Dat's false!")
-        # else:
-        #     await message.channel.send("Shmuckerooni")
 
     def exit(self):
         pass
