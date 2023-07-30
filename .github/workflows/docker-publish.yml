@@ -18,8 +18,14 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
-    - name: Login to Google Container Registry
-      run: echo "${{ secrets.GCR_KEY }}" | docker login -u _json_key --password-stdin https://$GCR_HOST
+    - name: Setup gcloud CLI
+      uses: google-github-actions/setup-gcloud@v0.2.0
+      with:
+        service_account_key: ${{ secrets.GCR_KEY }}
+        project_id: portfolio-web-249407
+
+    - name: Configure Docker to use the gcloud command-line tool as a credential helper
+      run: gcloud --quiet auth configure-docker
 
     - name: Build and Push Docker image
       run: |
