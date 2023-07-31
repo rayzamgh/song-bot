@@ -7,15 +7,6 @@ on:
 env:
   IMAGE_NAME: song-bot
   GCR_HOST: gcr.io/portfolio-web-249407
-  GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-  GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
-  CLIENT_ID: ${{ secrets.CLIENT_ID }}
-  CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-  CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-  DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-  GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
 
 jobs:
   build-and-push:
@@ -42,7 +33,27 @@ jobs:
       run: gcloud --quiet auth configure-docker
 
     - name: Build and Push Docker image
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+        CLIENT_ID: ${{ secrets.CLIENT_ID }}
+        CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+        CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+        DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
       run: |
-        docker build -t $IMAGE_NAME .
+        docker build \
+          --build-arg GOOGLE_API_KEY=$GOOGLE_API_KEY \
+          --build-arg GOOGLE_CSE_ID=$GOOGLE_CSE_ID \
+          --build-arg CLIENT_ID=$CLIENT_ID \
+          --build-arg CLIENT_SECRET=$CLIENT_SECRET \
+          --build-arg CHATGPT_KEY=$CHATGPT_KEY \
+          --build-arg OPENAI_API_KEY=$OPENAI_API_KEY \
+          --build-arg FIREBASE_API_KEY=$FIREBASE_API_KEY \
+          --build-arg DISCORD_TOKEN=$DISCORD_TOKEN \
+          --build-arg GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS \
+          -t $IMAGE_NAME .
         docker tag $IMAGE_NAME $GCR_HOST/$IMAGE_NAME-latest
         docker push $GCR_HOST/$IMAGE_NAME-latest
