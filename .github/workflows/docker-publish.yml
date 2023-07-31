@@ -24,10 +24,13 @@ jobs:
         service_account_key: ${{ secrets.GCR_KEY }}
         project_id: portfolio-web-249407
 
+    - name: Install jq
+      run: sudo apt-get install jq
+
     - name: Write Google Application Credentials to File
       run: |
         mkdir -p credentials
-        echo "${{ secrets.APP_GCP_CREDENTIALS }}" > credentials/portfolio-web-249407-067e257bc8c9.json
+        jq -r '. as $json | $json' <<< "${{ secrets.APP_GCP_CREDENTIALS }}" > credentials/portfolio-web-249407-067e257bc8c9.json
       
     - name: Configure Docker to use the gcloud command-line tool as a credential helper
       run: gcloud --quiet auth configure-docker
