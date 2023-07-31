@@ -57,3 +57,9 @@ jobs:
           -t $IMAGE_NAME .
         docker tag $IMAGE_NAME $GCR_HOST/$IMAGE_NAME-latest
         docker push $GCR_HOST/$IMAGE_NAME-latest
+
+    - name: Reset GCE instance
+      run: |
+        gcloud compute instances stop instance-1 --zone=us-central1-a
+        gcloud compute instances start instance-1 --zone=us-central1-a
+
