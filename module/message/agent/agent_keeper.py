@@ -40,7 +40,7 @@ class SongKeeper:
         """Returns a dictionary that represents Song's current status."""
 
         # Calculate the difference between the two times
-        time_difference = self.last_hit - self.get_current_datetime()
+        time_difference = self.get_current_datetime() - self.last_hit
 
         # Compare the difference to one hour
         if time_difference > timedelta(hours=1):
