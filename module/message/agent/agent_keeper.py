@@ -2,6 +2,9 @@ import asyncio
 import python_weather
 import copy
 from datetime import datetime, timedelta
+from datetime import datetime
+import pytz
+
 
 class SongKeeper:
     """This class represents a SongBot's status, 
@@ -30,7 +33,7 @@ class SongKeeper:
         }
 
         # Get the current time
-        self.last_hit = datetime.now()
+        self.last_hit = self.get_current_datetime()
 
     @property
     def status(self):
@@ -48,15 +51,35 @@ class SongKeeper:
 
         current_environment["weather"] = self.environment["weather"]["forecast"]
 
-        self.last_hit = datetime.now()
+        # Get the current time
+        self.last_hit = self.get_current_datetime()
 
         return current_condition | current_environment
     
+    def get_current_datetime(self) -> str:
+        # Get the current time in UTC
+        current_datetime = datetime.now(pytz.utc)
+
+        # Define a fixed offset time zone with +7 hours
+        offset_timezone = pytz.timezone('Asia/Bangkok')
+
+        # Convert the current time to the desired offset time zone
+        return current_datetime.astimezone(offset_timezone)
+    
     def get_current_formatted_datetime(self) -> str:
-        """Returns the current date and time in a human-readable format."""
-        
-        current_datetime = datetime.now()
-        formatted_datetime = current_datetime.strftime('%B %d, %Y, %I:%M %p')
+        """Returns the current date and time in a human-readable format, adjusted by +7 hours."""
+
+        # Get the current time in UTC
+        current_datetime = datetime.now(pytz.utc)
+
+        # Define a fixed offset time zone with +7 hours
+        offset_timezone = pytz.timezone('Asia/Bangkok')
+
+        # Convert the current time to the desired offset time zone
+        adjusted_datetime = current_datetime.astimezone(offset_timezone)
+
+        # Format the adjusted time
+        formatted_datetime = adjusted_datetime.strftime('%B %d, %Y, %I:%M %p')
 
         return formatted_datetime
     
@@ -75,7 +98,7 @@ class SongKeeper:
         """
         
         # Update current time
-        self.environment["time"] = self.get_current_datetime()
+        self.environment["time"] = self.get_current_formatted_datetime()
 
         # Update current weather
         self.environment["weather"]["forecast"] = asyncio.run(self.get_current_weather(self.environment["place"]))
