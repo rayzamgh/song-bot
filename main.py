@@ -1,14 +1,19 @@
 import os
 from dotenv import load_dotenv
+from discord.ext.commands import Bot
 
 # load all environment variables
 load_dotenv()
 
 from discord import Intents
-from client import SongClient
+from bot import SongBot
 
 intents = Intents.all()
 intents.message_content = True
-client = SongClient(intents=intents)
+client = SongBot(command_prefix="", intents=intents)
+
+
+# ADD COGS HERE
+
 discord_token = os.getenv('DISCORD_TOKEN')
 client.run(discord_token)

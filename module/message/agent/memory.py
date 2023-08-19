@@ -1,4 +1,4 @@
-
+from typing import Dict
 from typing import Any, List, Optional
 from langchain.memory.entity import BaseEntityStore
 from google.cloud import firestore
@@ -12,6 +12,11 @@ from langchain.schema import (
     _message_to_dict,
     messages_from_dict,
 )
+
+from langchain.memory.utils import get_prompt_input_key
+from langchain.prompts.base import BasePromptTemplate
+from langchain.schema import BaseMessage, get_buffer_string
+from langchain.chains import LLMChain
 
 
 class FirestoreEntityStore(BaseEntityStore):
@@ -133,3 +138,44 @@ class ChatConversationEntityMemory(ConversationEntityMemory):
         :meta private:
         """
         return ["entities"]
+    
+    def save_knowledge(self, inputs: Dict[str, Any]) -> None:
+        """
+        Save knowledge from this conversation history to the entity store.
+
+        Generates a summary for each entity in the entity cache by prompting
+        the model, and saves these summaries to the entity store.
+        """
+
+
+        if self.input_key is None:
+            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
+        else:
+            prompt_input_key = self.input_key
+
+        # Extract an arbitrary window of the last message pairs from
+        # the chat history, where the hyperparameter k is the
+        # number of message pairs:
+        buffer_string = get_buffer_string(
+            self.buffer[-self.k * 2 :],
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+        input_data = inputs[prompt_input_key]
+
+        # Create an LLMChain for predicting entity summarization from the context
+        chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
+
+        # Generate new summaries for entities and save them in the entity store
+        for entity in self.entity_cache:
+            # Get existing summary if it exists
+            existing_summary = self.entity_store.get(entity, "")
+            output = chain.predict(
+                summary=existing_summary,
+                entity=entity,
+                history=buffer_string,
+                input=input_data,
+            )
+            # Save the updated summary to the entity store
+            self.entity_store.set(entity, output.strip())

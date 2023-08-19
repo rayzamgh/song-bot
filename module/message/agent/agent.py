@@ -13,7 +13,8 @@ from .prompts import (ENTITY_SUMMARIZATION_PROMPT,
                       SONG_PREFIX,
                       SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
                       SONG_INPUT_TEMPLATE,
-                      SONG_YES_LANG_TEMPLATE)
+                      SONG_YES_LANG_TEMPLATE,
+                      SONG_TALK_TEMPLATE)
 from .memory import FirestoreEntityStore, FirestoreChatMessageHistory, ChatConversationEntityMemory
 from .agent_keeper import SongKeeper
 from google.cloud import firestore
@@ -21,6 +22,8 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.agents import OpenAIFunctionsAgent
 from langchain.agents import AgentExecutor
 from langchain.chains import SequentialChain
+import asyncio
+from utils import get_original_message, get_current_formatted_datetime
 
 # TODO
 
@@ -53,11 +56,13 @@ class SongAgent:
     """
 
     mem_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-3.5-turbo-0301", temperature=0)
+        model_name="gpt-3.5-turbo-0613", temperature=0)
+    style_model: BaseLanguageModel = ChatOpenAI(
+        model_name="gpt-3.5-turbo-0613", temperature=0.65)
     chat_model: BaseLanguageModel = ChatOpenAI(
         model_name="gpt-3.5-turbo-16k", temperature=0.8)
 
-    def __init__(self, complex_agent = True):
+    def __init__(self, complex_agent=True):
         """
         Initialize the SongAgent with default keeper, toolkit, memory and chain.
         """
@@ -67,7 +72,8 @@ class SongAgent:
 
         # Chain construction
         self.executor = self.load_agent() if complex_agent else self.load_chain()
-        self.talking_style_chain  = self.load_talking_style_chain()
+        self.talk_chain = self.load_talk_chain()
+        self.talking_style_chain = self.load_talking_style_chain()
 
     def load_keeper(self) -> Dict[str, str]:
         """
@@ -86,11 +92,11 @@ class SongAgent:
 
         default_toolkit = [
             Tool(
-                name="Search", 
+                name="Search",
                 func=search.run,
                 description="Useful for when you are tryint to search the internet for information, on the latest news that you are unsure about"),
             Tool(
-                name="Wikipedia", 
+                name="Wikipedia",
                 func=wikipedia.run,
                 description="Useful for when you need to find detailed information on a topic or famous things."),
             Tool(
@@ -122,15 +128,27 @@ class SongAgent:
                                                    max_token_limit=3000)
 
         return main_memory
-    
+
     def load_talking_style_chain(self) -> LLMChain:
         """
         Load the talking style chain for Song
         """
 
         llm_chain = LLMChain(
-            llm=self.mem_model,
+            llm=self.style_model,
             prompt=PromptTemplate.from_template(SONG_YES_LANG_TEMPLATE)
+        )
+
+        return llm_chain
+
+    def load_talk_chain(self) -> LLMChain:
+        """
+        Load the talk chain for Song
+        """
+
+        llm_chain = LLMChain(
+            llm=self.style_model,
+            prompt=PromptTemplate.from_template(SONG_TALK_TEMPLATE)
         )
 
         return llm_chain
@@ -168,7 +186,7 @@ class SongAgent:
             input_variables=input_variables, messages=messages)
 
         return LLMChain(llm=self.chat_model, verbose=True, prompt=final_prompt, memory=self.main_memory)
-    
+
     def load_agent(self) -> OpenAIFunctionsAgent:
         """
         Load the language learning model thinking agent.
@@ -202,9 +220,10 @@ class SongAgent:
         final_prompt = ChatPromptTemplate(
             input_variables=input_variables, messages=messages)
 
-        agent = OpenAIFunctionsAgent(llm=self.chat_model, tools=self.toolkit, prompt=final_prompt)
-        agent_executor = AgentExecutor(agent=agent, tools=self.toolkit, memory=self.main_memory, verbose=True)
-
+        agent = OpenAIFunctionsAgent(
+            llm=self.chat_model, tools=self.toolkit, prompt=final_prompt)
+        agent_executor = AgentExecutor(
+            agent=agent, tools=self.toolkit, memory=self.main_memory, verbose=True)
 
         # TODO: BROKEN ABOUT RIGHT HERE:
 
@@ -215,8 +234,8 @@ class SongAgent:
         Preprocess the raw input message, replacing any mentions of the bot with its name.
         """
         return raw_input.replace('<@1132625921636048977>', 'Adelia')
-    
-    def prep_message(self, message : Message) -> str:
+
+    def prep_message(self, message: Message, original_message : Message = None) -> str:
         """
         Prepare message as a whole for the chain to run
         """
@@ -224,42 +243,52 @@ class SongAgent:
         mentioned_users: list[User] = message.mentions
         sender: User = message.author
 
-        # Get the current date and time
-        current_datetime = datetime.now()
-
-        # Format it into a more readable string
-        self.keeper.status["time"] = current_datetime.strftime(
-            '%Y-%m-%d %H:%M:%S')
-
         for user in mentioned_users:
             incoming_message = incoming_message.replace(
                 f"<@{user.id}>", user.name)
 
         if message.type is MessageType.reply:
-            original_message: Message = message.reference
-            input_message = f"{sender.name} replies to {self.preprocess_message(original_message.content)}, with: {self.preprocess_message(incoming_message)}"
+            input_message = f"At {get_current_formatted_datetime()}, {sender.name} replies to {self.preprocess_message(original_message.content)}, with: {self.preprocess_message(incoming_message)}"
         else:
-            input_message = f"{sender.name} says : {self.preprocess_message(incoming_message)}"
+            input_message = f"At {get_current_formatted_datetime()}, {sender.name} says : {self.preprocess_message(incoming_message)}"
 
         return input_message
-
-    def run(self, message: Message) -> str:
+    
+    def add_knowledge(self, input):
         """
-        Process a new message and generate an appropriate response using the chat chain.
+        Manually adds knowledge to bot
         """
-        input_message = self.prep_message(message)
-        
-        raw_output = self.executor.run(input=input_message, **self.keeper.status)
-        final_output = self.talking_style_chain.run(raw_output)
 
-        return final_output
+        _input = {"input": input}
+        self.main_memory.save_knowledge(_input)
 
     async def arun(self, message: Message) -> str:
         """
         Process a new message and generate an appropriate response using the chat chain, async.
         """
-        input_message = self.prep_message(message)
+        
+        # Get Replies if any
+        original_message = await get_original_message(message) if message.reference else None
+        
+        input_message = self.prep_message(message, original_message)
         raw_output = await self.executor.arun(input=input_message, **self.keeper.status)
         final_output = await self.talking_style_chain.arun(raw_output)
 
         return final_output
+
+    async def atalk(self, talking_topic) -> str:
+        """
+        Process a scheduled message, async.
+        """
+        
+        # Saves knowledge of the topic
+        self.add_knowledge(talking_topic)
+
+        raw_output = await self.talk_chain.arun(talking_topic)
+        raw_output = await self.talking_style_chain.arun(raw_output)
+
+        self.main_memory.chat_memory.add_ai_message(raw_output)
+        
+        return raw_output
+    
+

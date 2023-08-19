@@ -1,10 +1,8 @@
 import asyncio
-import python_weather
 import copy
 from datetime import datetime, timedelta
-from datetime import datetime
-import pytz
-
+from utils import get_current_datetime, get_current_formatted_datetime, get_current_weather
+import random
 
 class SongKeeper:
     """This class represents a SongBot's status, 
@@ -14,92 +12,160 @@ class SongKeeper:
     def __init__(self):
         """Initializes the SongKeeper's condition and environment."""
 
-        current_formatted_time = self.get_current_formatted_datetime()
-        current_weather = asyncio.run(self.get_current_weather("Jakarta"))
+        current_formatted_time = get_current_formatted_datetime()
+        current_weather = asyncio.run(get_current_weather("Jakarta"))
 
         self.condition = {
-            "mood": "chill", 
-            "busyness": "not busy", 
-            "current_activity": "working from home"
+            "mood": "chill",
+            "busyness": "not busy",
+            "current_activity": "working from home",
         }
 
-        self.environment = {    
-            "place" : "Jakarta",
-            "time" : current_formatted_time,
-            "weather" : {
-                "forecast" : current_weather.description,
-                "last_update" : current_formatted_time
+        self.environment = {
+            "place": "Jakarta",
+            "time": current_formatted_time,
+            "weather": {
+                "forecast": current_weather.description,
+                "last_update": current_formatted_time
             }
         }
 
+        self.activity_log = ["Di jam 5 pagi, bangun tidur, masih ngantuk hehe"]
+        self.hunger = 50
+        self.boredom = 50
+
         # Get the current time
-        self.last_hit = self.get_current_datetime()
+        self.last_hit = get_current_datetime()
 
     @property
     def status(self):
         """Returns a dictionary that represents Song's current status."""
 
         # Calculate the difference between the two times
-        time_difference = self.get_current_datetime() - self.last_hit
+        current_datetime = get_current_datetime()
+        time_difference = current_datetime - self.last_hit
 
         # Compare the difference to one hour
-        if time_difference > timedelta(hours=1):
-            self.advance_clock()
-        
+        if time_difference > timedelta(minutes=15):
+            self.last_hit = current_datetime
+
         current_condition = copy.copy(self.condition)
         current_environment = copy.copy(self.environment)
 
         current_environment["weather"] = self.environment["weather"]["forecast"]
 
-        # Get the current time
-        self.last_hit = self.get_current_datetime()
+        activities = {
+            'activities' : " \n ".join(self.activity_log[-5:])
+        }
 
-        return current_condition | current_environment
-    
-    def get_current_datetime(self) -> str:
-        # Get the current time in UTC
-        current_datetime = datetime.now(pytz.utc)
+        return current_condition | current_environment | activities
 
-        # Define a fixed offset time zone with +7 hours
-        offset_timezone = pytz.timezone('Asia/Bangkok')
-
-        # Convert the current time to the desired offset time zone
-        return current_datetime.astimezone(offset_timezone)
-    
-    def get_current_formatted_datetime(self) -> str:
-        """Returns the current date and time in a human-readable format, adjusted by +7 hours."""
-
-        # Get the current time in UTC
-        current_datetime = datetime.now(pytz.utc)
-
-        # Define a fixed offset time zone with +7 hours
-        offset_timezone = pytz.timezone('Asia/Bangkok')
-
-        # Convert the current time to the desired offset time zone
-        adjusted_datetime = current_datetime.astimezone(offset_timezone)
-
-        # Format the adjusted time
-        formatted_datetime = adjusted_datetime.strftime('%B %d, %Y, %I:%M %p')
-
-        return formatted_datetime
-    
-    async def get_current_weather(self, city):
-        """Fetches the current weather for the city specified in the environment."""
-
-        async with python_weather.Client(unit=python_weather.IMPERIAL) as client:
-            weather = await client.get(city)
-            return weather.current
-        
     async def advance_clock(self):
         """Updates Song's status and activities periodically.
         TODO:
-        This method is intended to be called every hour and updates the 
+        This method is intended to be called every so often and updates the 
         current time and weather in Song's environment.
         """
-        
+
         # Update current time
-        self.environment["time"] = self.get_current_formatted_datetime()
+        self.environment["time"] = get_current_formatted_datetime()
 
         # Update current weather
-        self.environment["weather"]["forecast"] = asyncio.run(self.get_current_weather(self.environment["place"]))
+        self.environment["weather"]["forecast"] = await get_current_weather(self.environment["place"])
         self.environment["weather"]["last_update"] = self.environment["time"]
+
+        # Increase hunger and boredom based on elapsed time
+        self.hunger += 1.5
+        self.boredom += 2
+        
+        self.hunger = min(100, self.hunger)
+        self.boredom = min(100, self.boredom)
+
+        if self.hunger > 90:
+            self.feed()
+
+        if self.boredom > 90:
+            self.play()
+
+        print("Song clock advanced!")
+
+    def feed(self):
+
+        CHOICE_OF_FOOD = {
+            "wafer beng beng": {
+                "description": "buat ganjel perut aja",
+                "satisfy": 20,
+            },
+            "nasi padang": {
+                "description": "deket benhill, kenyang banget gue",
+                "satisfy": 60,
+            },
+            "nasi goreng": {
+                "description": "spesial pake telur mata sapi di atasnya",
+                "satisfy": 50,
+            },
+            "es krim": {
+                "description": "seger bener, wkwkwk",
+                "satisfy": 35,
+            },
+            "rendang": {
+                "description": "Empuknya rendang ini, lumer di mulut gue!",
+                "satisfy": 65,
+            },
+            "sate ayam": {
+                "description": "gosong anjir wkwkwk",
+                "satisfy": 55,
+            },
+            "gado-gado": {
+                "description": "Saus kacangnya mantul banget",
+                "satisfy": 40,
+            },
+            "klepon": {
+                "description": "Manisnya keluar pas digigit",
+                "satisfy": 25,
+            },
+            "pisang goreng": {
+                "description": "guilty pleasure favorit gw wkwkwk",
+                "satisfy": 30,
+            }
+        }
+
+        selected_food, details = random.choice(list(CHOICE_OF_FOOD.items()))
+
+        time_now = get_current_formatted_datetime()
+
+        self.activity_log.append(f"Di jam {time_now}, gue makan {selected_food}, {details['description']}")
+
+        self.hunger -= details['satisfy']
+        self.hunger = max(0, self.hunger)
+        
+        
+    def play(self):
+
+        CHOICE_OF_ACTIVITY = {
+            "jalan-jalan keluar": {
+                "description": "iseng aja gue muter daerah senopati, gk tau mau ngapain wkwk",
+                "satisfy": 20,
+            },
+            "main video game gta 5": {
+                "description": "free roam aja gangguin warga lokal sama polisi di game",
+                "satisfy": 60,
+            },
+            "main video game dragon ball": {
+                "description": f"tadi diajakin main sama Rayza, gue {'menang' if random.choice([True, False]) else 'kalah'} donggggg",
+                "satisfy": 60,
+            },
+            "rewatch inuyasha": {
+                "description": "kangen aja gw sama inuyasha pengen nonton, haha",
+                "satisfy": 40,
+            },
+        }
+
+        selected_activity, details = random.choice(list(CHOICE_OF_ACTIVITY.items()))
+
+        time_now = get_current_formatted_datetime()
+
+        self.activity_log.append(f"Di jam {time_now}, gue {selected_activity}, {details['description']}")
+
+        self.hunger -= details['satisfy']
+        self.boredom = max(0, self.boredom)
