@@ -1,5 +1,5 @@
 chromadb==0.3.26
-langchain==0.0.216
+langchain==0.0.268
 langchainplus-sdk==0.0.17
 python-dotenv
 discord.py==2.3.1

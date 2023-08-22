@@ -24,6 +24,10 @@ from langchain.agents import AgentExecutor
 from langchain.chains import SequentialChain
 import asyncio
 from utils import get_original_message, get_current_formatted_datetime
+from langchain.prompts import (
+    FewShotChatMessagePromptTemplate,
+    ChatPromptTemplate,
+)
 
 # TODO
 
@@ -58,7 +62,7 @@ class SongAgent:
     mem_model: BaseLanguageModel = ChatOpenAI(
         model_name="gpt-3.5-turbo-0613", temperature=0)
     style_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-3.5-turbo-0613", temperature=0.65)
+        model_name="gpt-3.5-turbo-0613", temperature=0.6)
     chat_model: BaseLanguageModel = ChatOpenAI(
         model_name="gpt-3.5-turbo-16k", temperature=0.8)
 
@@ -134,9 +138,44 @@ class SongAgent:
         Load the talking style chain for Song
         """
 
+        examples = [    
+            {
+                "input": "Hahaha, bener juga tuh, gue emang agak terlalu sabi ya. Makasih udah mengingetin, Rayza. Gue bakal coba lebih chill lagi ke depannya.", 
+                "output": "Haha, iya kadang2 gue emg kelewatan, thanks udh ngingetin ya, Rayza. Gua coba lebih chill lagi kedepannya."
+            },
+            {
+                "input": "Haha, makasih banget, Rayza, udah cerita yang detail tentang kuliahmu. Gue seneng banget liat semangat dan dedikasimu dalam belajar dan berorganisasi. Pastinya, seimbangin antara akademik dan sosial tuh penting banget buat hidupin masa mahasiswa. Terus tetep semangat ya dan semoga sukses ngejar impian di masa depan. Makasih juga udah share linknya, nanti gue cek ya!", 
+                "output": "Wkwk, makasih, Ray, udh cerita kuliah lu. Gue seneng aja sihh liat dedikasi looo belajar sama organisasi gitu gitu. Susah dan penting sih yaa yang kayak gitu gitu tuh. Mangat terus yak ngejar impian lo."
+            },
+            {
+                "input": "Kamu bisa mengenal diriku dari obrolan yang kita lalui sehari-hari. Detik demi detik, menit demi menit, setiap obrolan kita akan membuatmu mengenalku lebih dekat.", 
+                "output": "Lo bisa kenalan sama gue dari ngobrol sehari-hari ko. Detik, menit tiap kita ngomong kan jadi makin kenal ya gak?"
+            }
+        ]
+
+        example_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("human", "{input}"),
+                ("ai", "{output}"),
+            ]
+        )
+
+        few_shot_prompt = FewShotChatMessagePromptTemplate(
+            example_prompt=example_prompt,
+            examples=examples,
+        )
+
+        final_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", SONG_YES_LANG_TEMPLATE),
+                few_shot_prompt,
+                ("human", "{input}"),
+            ]
+        )
+
         llm_chain = LLMChain(
             llm=self.style_model,
-            prompt=PromptTemplate.from_template(SONG_YES_LANG_TEMPLATE)
+            prompt=final_prompt
         )
 
         return llm_chain
@@ -146,11 +185,58 @@ class SongAgent:
         Load the talk chain for Song
         """
 
-        llm_chain = LLMChain(
-            llm=self.style_model,
-            prompt=PromptTemplate.from_template(SONG_TALK_TEMPLATE)
+        examples = [    
+            {
+                "input": """The staff for Mari Okada and MAPPA's original anime film Maboroshi (Alice to Therese no Maboroshi Kōjō, or literally, Alice and Therese's Illusory Factory) debuts its full trailer on Wednesday. The trailer previews Miyuki Nakajima's theme song "Shin-on" (Heartbeat), and it also confirms the characters for more cast members (previously revealed in a poster visual last Friday
+
+                The newly confirmed cast members and their roles include:
+
+                Taku Yashiro as Daisuke Sasakura
+                Tasuku Hatanaka as Atsushi Nitta
+                Daiki Kobayashi as Yasunari Semba
+                Ayaka Saito as Yūko Sonobe
+                Maki Kawase as Hina Hara
+                Yukiyo Fujii as Reina Yasumi
+                Setsuji Satoh as Mamoru Sagami""", 
+                "output": """Yo, jadi gw denger-denger ada trailer baru buat anime film orisinal dari Mari Okada dan MAPPA, namanya "Maboroshi". Judul lengkapnya sih "Alice and Therese's Illusory Factory". Lagu temanya "Shin-on" (Heartbeat) dari Miyuki Nakajima. Gw liat juga ada beberapa nama karakter yang udah diumumin sebelumnya.
+
+                Jadi, yang main:
+                - Taku Yashiro jadi Daisuke Sasakura.
+                - Tasuku Hatanaka jadi Atsushi Nitta.
+                - Daiki Kobayashi jadi Yasunari Semba.
+                - Ayaka Saito jadi Yūko Sonobe.
+                - Maki Kawase jadi Hina Hara.
+                - Yukiyo Fujii jadi Reina Yasumi.
+                - Setsuji Satoh jadi Mamoru Sagami.
+
+                Hmmm okk deh, Semoga bagus filmnya."""
+            }
+        ]
+
+        example_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("human", "{input}"),
+                ("ai", "{output}"),
+            ]
         )
 
+        few_shot_prompt = FewShotChatMessagePromptTemplate(
+            example_prompt=example_prompt,
+            examples=examples,
+        )
+
+        final_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", SONG_TALK_TEMPLATE),
+                few_shot_prompt,
+                ("human", "{input}"),
+            ]
+        )
+
+        llm_chain = LLMChain(
+            llm=self.style_model,
+            prompt=final_prompt
+        )
         return llm_chain
 
     def load_chain(self) -> LLMChain:
@@ -218,14 +304,14 @@ class SongAgent:
         print(input_variables)
 
         final_prompt = ChatPromptTemplate(
-            input_variables=input_variables, messages=messages)
+            input_variables=input_variables, 
+            messages=messages
+        )
 
         agent = OpenAIFunctionsAgent(
             llm=self.chat_model, tools=self.toolkit, prompt=final_prompt)
         agent_executor = AgentExecutor(
             agent=agent, tools=self.toolkit, memory=self.main_memory, verbose=True)
-
-        # TODO: BROKEN ABOUT RIGHT HERE:
 
         return agent_executor
 
@@ -271,7 +357,7 @@ class SongAgent:
         original_message = await get_original_message(message) if message.reference else None
         
         input_message = self.prep_message(message, original_message)
-        raw_output = await self.executor.arun(input=input_message, **self.keeper.status)
+        raw_output = self.executor.run(input=input_message, **self.keeper.status)
         final_output = await self.talking_style_chain.arun(raw_output)
 
         return final_output

@@ -33,6 +33,7 @@ class SongKeeper:
         self.activity_log = ["Di jam 5 pagi, bangun tidur, masih ngantuk hehe"]
         self.hunger = 50
         self.boredom = 50
+        self.mood_swing = 50
 
         # Get the current time
         self.last_hit = get_current_datetime()
@@ -61,10 +62,8 @@ class SongKeeper:
         return current_condition | current_environment | activities
 
     async def advance_clock(self):
-        """Updates Song's status and activities periodically.
-        TODO:
-        This method is intended to be called every so often and updates the 
-        current time and weather in Song's environment.
+        """
+        Updates Song's status and activities periodically.
         """
 
         # Update current time
@@ -77,6 +76,7 @@ class SongKeeper:
         # Increase hunger and boredom based on elapsed time
         self.hunger += 1.5
         self.boredom += 2
+        self.mood_swing += 2
         
         self.hunger = min(100, self.hunger)
         self.boredom = min(100, self.boredom)
@@ -86,6 +86,9 @@ class SongKeeper:
 
         if self.boredom > 90:
             self.play()
+
+        if self.mood_swing > 90:
+            self.swing_mood()
 
         print("Song clock advanced!")
 
@@ -169,3 +172,21 @@ class SongKeeper:
 
         self.hunger -= details['satisfy']
         self.boredom = max(0, self.boredom)
+        
+        
+    def swing_mood(self):
+
+        CHOICE_OF_MOOD = [
+            "normal",
+            "chill",
+            "angsty",
+            "angry",
+            "tired",
+            "happy",
+            "lovely",
+            "horny"
+        ]
+
+        self.condition["mood"] = random.choice(CHOICE_OF_MOOD)
+
+        self.boredom = 0
