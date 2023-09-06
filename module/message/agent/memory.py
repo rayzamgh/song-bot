@@ -113,7 +113,7 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
     def add_ai_message(self, message: str) -> None:
         self.append(AIMessage(content=message))
 
-    def append(self, message: BaseMessage) -> None:
+    def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Firestore"""
         doc_ref = self.collection.document(self.session_id)
         doc = doc_ref.get()
