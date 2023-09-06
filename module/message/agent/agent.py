@@ -358,9 +358,11 @@ class SongAgent:
         
         input_message = self.prep_message(message, original_message)
         raw_output = self.executor.run(input=input_message, **self.keeper.status)
-        final_output = await self.talking_style_chain.arun(raw_output)
+        raw_output = await self.talking_style_chain.arun(raw_output)
 
-        return final_output
+        raw_output = raw_output.replace("!", ".")
+
+        return raw_output
 
     async def atalk(self, talking_topic) -> str:
         """
@@ -374,6 +376,8 @@ class SongAgent:
         raw_output = await self.talking_style_chain.arun(raw_output)
 
         self.main_memory.chat_memory.add_ai_message(raw_output)
+
+        raw_output = raw_output.replace("!", ".")
         
         return raw_output
     

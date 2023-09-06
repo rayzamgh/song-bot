@@ -108,10 +108,10 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         return []
 
     def add_user_message(self, message: str) -> None:
-        self.append(HumanMessage(content=message))
+        self.add_message(HumanMessage(content=message))
 
     def add_ai_message(self, message: str) -> None:
-        self.append(AIMessage(content=message))
+        self.add_message(AIMessage(content=message))
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Firestore"""
