@@ -98,7 +98,7 @@ class SongBot(Bot):
             pass
 
     # Scheduled conversation starter (every 6 hours)
-    @tasks.loop(hours=12)
+    @tasks.loop(hours=30)
     async def convo_scheduled_message(self):
         channel = self.get_channel(self.CHANNEL_NAME_2_ID["general"])
         daystate = get_day_state()
