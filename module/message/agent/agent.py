@@ -60,7 +60,7 @@ class SongAgent:
     """
 
     mem_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-3.5-turbo-0613", temperature=0)
+        model_name="gpt-3.5-turbo-16k", temperature=0)
     style_model: BaseLanguageModel = ChatOpenAI(
         model_name="gpt-3.5-turbo-0613", temperature=0.7)
     chat_model: BaseLanguageModel = ChatOpenAI(
@@ -128,8 +128,7 @@ class SongAgent:
                                                    entity_extraction_prompt=ENTITY_EXTRACTION_PROMPT,
                                                    return_messages=True,
                                                    entity_store=FirestoreEntityStore(
-                                                       client=firestore_client),
-                                                   max_token_limit=3000)
+                                                       client=firestore_client))
 
         return main_memory
 
@@ -198,18 +197,7 @@ class SongAgent:
                 Maki Kawase as Hina Hara
                 Yukiyo Fujii as Reina Yasumi
                 Setsuji Satoh as Mamoru Sagami""", 
-                "output": """Yo, jadi gw denger-denger ada trailer baru buat anime film orisinal dari Mari Okada dan MAPPA, namanya "Maboroshi". Judul lengkapnya sih "Alice and Therese's Illusory Factory". Lagu temanya "Shin-on" (Heartbeat) dari Miyuki Nakajima. Gw liat juga ada beberapa nama karakter yang udah diumumin sebelumnya.
-
-                Jadi, yang main:
-                - Taku Yashiro jadi Daisuke Sasakura.
-                - Tasuku Hatanaka jadi Atsushi Nitta.
-                - Daiki Kobayashi jadi Yasunari Semba.
-                - Ayaka Saito jadi Yūko Sonobe.
-                - Maki Kawase jadi Hina Hara.
-                - Yukiyo Fujii jadi Reina Yasumi.
-                - Setsuji Satoh jadi Mamoru Sagami.
-
-                Hmmm okk deh, Semoga bagus filmnya."""
+                "output": """Yo, jadi gw denger-denger ada trailer baru buat anime film orisinal dari Mari Okada dan MAPPA, namanya "Maboroshi". Judul lengkapnya sih "Alice and Therese's Illusory Factory". Lagu temanya "Shin-on" (Heartbeat) dari Miyuki Nakajima. Gw liat juga ada beberapa nama karakter yang udah diumumin sebelumnya. Hmmm okk deh, Semoga bagus filmnya."""
             }
         ]
 
