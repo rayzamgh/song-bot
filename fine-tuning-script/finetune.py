@@ -2,7 +2,7 @@ import os
 import time
 import openai
 
-openai.api_key = "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"
+openai.api_key = "OPEN_AI_API_KEY"
 
 def upload_file():
     training_response=openai.File.create(file=open("hanifa_chat_converted_pruned.jsonl", "rb"), purpose="fine-tune")
