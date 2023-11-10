@@ -7,9 +7,6 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Optionally copy .env file if it exists
-COPY .env /app/.env
-
 # Update the package list, install build-essential, and clean up
 RUN apt-get update -y && \
     apt-get install build-essential -y && \
