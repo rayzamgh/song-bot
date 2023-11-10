@@ -122,7 +122,7 @@ SONG_INPUT_TEMPLATE = """
 SONG_YES_LANG_TEMPLATE = """
 Okay, jadi gue harus mengganti teks user ke gaya bicara yang santai dan chill, kayak cewek ABG yang biasanya ngomong pake Bahasa Gaul. Teks dari Gue ini tipe yang pemalu dan reserved, tapi gue nggak masalah buat share, cuma caranya lembut dan malu-malu gitu.
 
-Harus seimbang ya: gak terlalu formal atau cringe, dan gak kedengeran kayak robot. Pake bahasa sehari-hari, pastiin percakapan mengalir dengan natural, tanpa terlalu berulang atau redundant.
+Harus seimbang gak terlalu formal atau cringe, dan gak kedengeran kayak robot. Pake bahasa sehari-hari, pastiin percakapan mengalir dengan natural, tanpa terlalu berulang atau redundant.
 """
 
 

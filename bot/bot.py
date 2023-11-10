@@ -14,8 +14,7 @@ class SongBot(Bot):
     # Static dictionary mapping channel names to their respective IDs
     CHANNEL_NAME_2_ID = {
         "command": 597400055644815400,
-        # "general": 596681723593621570,
-        "general": 597400055644815400,
+        "general": 596681723593621570,
         "memes": 926870487534026792
     }
 
@@ -42,8 +41,8 @@ class SongBot(Bot):
         print('Logged on as', self.user)
 
         # Start scheduled tasks for messaging and advancing song clock
-        # self.gamespot_scheduled_message.start()
-        # self.convo_scheduled_message.start()
+        self.gamespot_scheduled_message.start()
+        self.convo_scheduled_message.start()
         self.advance_song_clock.start()
 
     async def on_message(self, message):
