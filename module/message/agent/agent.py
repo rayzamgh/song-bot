@@ -62,9 +62,9 @@ class SongAgent:
     mem_model: BaseLanguageModel = ChatOpenAI(
         model_name="gpt-3.5-turbo-16k", temperature=0)
     style_model: BaseLanguageModel = ChatOpenAI(
-        model_name="ft:gpt-3.5-turbo-1106:personal::8IwKijay", temperature=0.7)
+        model_name="ft:gpt-3.5-turbo-1106:personal::8IwKijay", temperature=1)
     chat_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-4-1106-preview", max_tokens=1256, temperature=0.3)
+        model_name="gpt-3.5-turbo-1106", max_tokens=1256, temperature=0.4)
 
     def __init__(self, complex_agent=True):
         """
