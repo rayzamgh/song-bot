@@ -15,8 +15,9 @@ class GameSpotAPI:
     # Define the structure for each topic
     TOPIC_STRUCTURES = {
         Topics.ARTICLES: {
-            "raw": ["title", "deck", "site_detail_url"],
-            "html": ["body"]
+            "raw": ["title", "deck"],
+            "html": ["body"],
+            "skip" : ["site_detail_url"], 
         },
         Topics.GAMES: {
             "raw": ["name", "description"]
@@ -75,13 +76,17 @@ class GameSpotAPI:
 
         def construct_text(response, topic_structure):
             raw_text = ""
-            for part_of_text in topic_structure["raw"]:
+            extra_info = {}
+            for part_of_text in topic_structure.get("raw", []):
                 raw_text += f"""{part_of_text}, {response["results"][0][part_of_text]}\n"""
 
             for part_of_text in topic_structure.get("html", []):
                 raw_text += f"""{part_of_text}, {format_html(response["results"][0][part_of_text])}\n"""
 
-            return raw_text
+            for part_of_text in topic_structure.get("skip", []):
+                extra_info[part_of_text] = response["results"][0][part_of_text]
+ 
+            return raw_text, extra_info
 
         if topic == self.Topics.ARTICLES:
             response = self.get_latest_articles()

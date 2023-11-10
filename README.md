@@ -2,9 +2,10 @@
 Deploy by : 
 - docker build -t song-bot .
 - docker run song-bot
+<!-- docker run -it --entrypoint /bin/bash song-bot -->
 - docker tag song-bot gcr.io/portfolio-web-249407/song-bot-latest
 - gcloud auth configure-docker
-- docker push gcr.io/portfolio-web-249407/song-bot-latest
+<!-- - docker push gcr.io/portfolio-web-249407/song-bot-latest DO NOT DO THIS WE ALREADY HAVE CI CD -->
 
 In VM
 - docker pull gcr.io/portfolio-web-249407/song-bot-latest

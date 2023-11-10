@@ -3,7 +3,8 @@ from dotenv import load_dotenv
 from discord.ext.commands import Bot
 
 # load all environment variables
-load_dotenv()
+print("Loading envs")
+load_dotenv(override=True)
 
 from discord import Intents
 from bot import SongBot

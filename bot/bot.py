@@ -14,7 +14,8 @@ class SongBot(Bot):
     # Static dictionary mapping channel names to their respective IDs
     CHANNEL_NAME_2_ID = {
         "command": 597400055644815400,
-        "general": 596681723593621570,
+        # "general": 596681723593621570,
+        "general": 597400055644815400,
         "memes": 926870487534026792
     }
 
@@ -41,8 +42,8 @@ class SongBot(Bot):
         print('Logged on as', self.user)
 
         # Start scheduled tasks for messaging and advancing song clock
-        self.gamespot_scheduled_message.start()
-        self.convo_scheduled_message.start()
+        # self.gamespot_scheduled_message.start()
+        # self.convo_scheduled_message.start()
         self.advance_song_clock.start()
 
     async def on_message(self, message):
@@ -72,19 +73,23 @@ class SongBot(Bot):
             )
 
     # Scheduled message from GameSpot (every 12 hours)
-    @tasks.loop(hours=30)
+    @tasks.loop(hours=1)
     async def gamespot_scheduled_message(self):
         channel = self.get_channel(self.CHANNEL_NAME_2_ID["general"])
         daystate = get_day_state()
 
         if channel and self.isactive:
             # Get a talking point from GameSpot API
-            talking_point = self.gamespot.get_song_babble(GameSpotAPI.Topics.ARTICLES)
+            talking_point, extra_info = self.gamespot.get_song_babble(GameSpotAPI.Topics.ARTICLES)
             print("=============== talking_point ===============")
             print(talking_point)
 
             # Convert talking point into a message via SongAgent
             talk = await self.local_agent.atalk(talking_point)
+
+            for key, value in extra_info.items():
+                talk = value + "\n" + talk
+
             await channel.send(talk)
 
     # Additional error handling for the scheduled GameSpot message task
@@ -98,7 +103,7 @@ class SongBot(Bot):
             pass
 
     # Scheduled conversation starter (every 6 hours)
-    @tasks.loop(hours=30)
+    @tasks.loop(hours=100)
     async def convo_scheduled_message(self):
         channel = self.get_channel(self.CHANNEL_NAME_2_ID["general"])
         daystate = get_day_state()

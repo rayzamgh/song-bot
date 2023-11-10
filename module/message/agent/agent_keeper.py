@@ -23,14 +23,14 @@ class SongKeeper:
 
         self.environment = {
             "place": "Jakarta",
-            "time": current_formatted_time,
+            "current_time": current_formatted_time,
             "weather": {
                 "forecast": current_weather.description,
                 "last_update": current_formatted_time
             }
         }
 
-        self.activity_log = ["Di jam 5 pagi, bangun tidur, masih ngantuk hehe"]
+        self.activity_log = ["Baru aja jalan-jalan keluar"]
         self.hunger = 50
         self.boredom = 50
         self.mood_swing = 50
@@ -53,10 +53,10 @@ class SongKeeper:
         current_condition = copy.copy(self.condition)
         current_environment = copy.copy(self.environment)
 
-        current_environment["weather"] = self.environment["weather"]["forecast"]
+        current_environment["weather"] = current_environment["weather"]["forecast"]
 
         activities = {
-            'activities' : " \n ".join(self.activity_log[-5:])
+            'activities' : self.activity_log[-1]
         }
 
         return current_condition | current_environment | activities
@@ -67,16 +67,16 @@ class SongKeeper:
         """
 
         # Update current time
-        self.environment["time"] = get_current_formatted_datetime()
+        self.environment["current_time"] = get_current_formatted_datetime()
 
         # Update current weather
         self.environment["weather"]["forecast"] = await get_current_weather(self.environment["place"])
-        self.environment["weather"]["last_update"] = self.environment["time"]
+        self.environment["weather"]["last_update"] = self.environment["current_time"]
 
         # Increase hunger and boredom based on elapsed time
-        self.hunger += 1.5
-        self.boredom += 2
-        self.mood_swing += 2
+        self.hunger += 15
+        self.boredom += 20
+        self.mood_swing += 20
         
         self.hunger = min(100, self.hunger)
         self.boredom = min(100, self.boredom)

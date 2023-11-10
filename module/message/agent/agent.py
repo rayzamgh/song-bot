@@ -1,3 +1,4 @@
+import copy
 from typing import Dict, List, Optional
 from discord import Message, User, MessageType
 from datetime import datetime
@@ -22,7 +23,6 @@ from langchain.prompts.prompt import PromptTemplate
 from langchain.agents import OpenAIFunctionsAgent
 from langchain.agents import AgentExecutor
 from langchain.chains import SequentialChain
-import asyncio
 from utils import get_original_message, get_current_formatted_datetime
 from langchain.prompts import (
     FewShotChatMessagePromptTemplate,
@@ -62,9 +62,9 @@ class SongAgent:
     mem_model: BaseLanguageModel = ChatOpenAI(
         model_name="gpt-3.5-turbo-16k", temperature=0)
     style_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-3.5-turbo-0613", temperature=0.7)
+        model_name="ft:gpt-3.5-turbo-1106:personal::8IwKijay", temperature=0.7)
     chat_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-3.5-turbo-16k", temperature=0.3)
+        model_name="gpt-4-1106-preview", max_tokens=1256, temperature=0.3)
 
     def __init__(self, complex_agent=True):
         """
@@ -98,15 +98,15 @@ class SongAgent:
             Tool(
                 name="Search",
                 func=search.run,
-                description="Useful for when you are tryint to search the internet for information, on the latest news that you are unsure about"),
+                description="For when you are trying to search the internet for new information"),
             Tool(
                 name="Wikipedia",
                 func=wikipedia.run,
-                description="Useful for when you need to find detailed information on a topic or famous things."),
+                description="For when you need to find detailed information on a topic or famous things."),
             Tool(
                 name="Arxiv",
                 func=arxiv.run,
-                description="""Useful for when you need to answer questions about scientific papers and journals, the input must be an exact DOI or title of the scientific paper."""
+                description="""For when you need to answer questions about scientific papers and journals, the input must be an exact DOI or title of the scientific paper."""
             ),
         ]
 
@@ -295,11 +295,15 @@ class SongAgent:
             input_variables=input_variables, 
             messages=messages
         )
-
-        agent = OpenAIFunctionsAgent(
-            llm=self.chat_model, tools=self.toolkit, prompt=final_prompt)
-        agent_executor = AgentExecutor(
-            agent=agent, tools=self.toolkit, memory=self.main_memory, verbose=True)
+        
+        agent_executor = initialize_agent(
+            llm=self.chat_model, 
+            tools=self.toolkit,
+            agent=AgentType.OPENAI_FUNCTIONS,
+            memory=self.main_memory,
+            verbose=True,
+            prompt=final_prompt,
+        )
 
         return agent_executor
 
@@ -307,7 +311,7 @@ class SongAgent:
         """
         Preprocess the raw input message, replacing any mentions of the bot with its name.
         """
-        return raw_input.replace('<@1132625921636048977>', 'Adelia')
+        return raw_input.replace('<@1132625921636048977>', 'Song')
 
     def prep_message(self, message: Message, original_message : Message = None) -> str:
         """
@@ -321,10 +325,15 @@ class SongAgent:
             incoming_message = incoming_message.replace(
                 f"<@{user.id}>", user.name)
 
+        # if message.type is MessageType.reply:
+        #     input_message = f"At {get_current_formatted_datetime()}, {sender.name} replies to {self.preprocess_message(original_message.content)}, with: {self.preprocess_message(incoming_message)}"
+        # else:
+        #     input_message = f"At {get_current_formatted_datetime()}, {sender.name} says : {self.preprocess_message(incoming_message)}"
+
         if message.type is MessageType.reply:
-            input_message = f"At {get_current_formatted_datetime()}, {sender.name} replies to {self.preprocess_message(original_message.content)}, with: {self.preprocess_message(incoming_message)}"
+            input_message = f"{sender.name} menjawab {self.preprocess_message(original_message.content)}, dia bilang: {self.preprocess_message(incoming_message)}"
         else:
-            input_message = f"At {get_current_formatted_datetime()}, {sender.name} says : {self.preprocess_message(incoming_message)}"
+            input_message = f"{sender.name} bilang: {self.preprocess_message(incoming_message)}"
 
         return input_message
     
@@ -344,6 +353,9 @@ class SongAgent:
         # Get Replies if any
         original_message = await get_original_message(message) if message.reference else None
         
+        print("SONG STATUS:")
+        print(self.keeper.status)
+        
         input_message = self.prep_message(message, original_message)
         raw_output = self.executor.run(input=input_message, **self.keeper.status)
         raw_output = await self.talking_style_chain.arun(raw_output)
@@ -361,7 +373,7 @@ class SongAgent:
         self.add_knowledge(talking_topic)
 
         raw_output = await self.talk_chain.arun(talking_topic)
-        raw_output = await self.talking_style_chain.arun(raw_output)
+        # raw_output = await self.talking_style_chain.arun(raw_output)
 
         self.main_memory.chat_memory.add_ai_message(raw_output)
 

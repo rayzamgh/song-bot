@@ -1,6 +1,4 @@
-chromadb==0.3.26
-langchain==0.0.268
-langchainplus-sdk==0.0.17
+langchain==0.0.331
 python-dotenv
 discord.py==2.3.1
 google-cloud==0.34.0

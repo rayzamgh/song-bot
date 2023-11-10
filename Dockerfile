@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
+# Optionally copy .env file if it exists
+COPY .env /app/.env
+
 # Update the package list, install build-essential, and clean up
 RUN apt-get update -y && \
     apt-get install build-essential -y && \
@@ -25,6 +28,7 @@ ARG OPENAI_API_KEY
 ARG FIREBASE_API_KEY
 ARG DISCORD_TOKEN
 ARG GOOGLE_APPLICATION_CREDENTIALS
+ARG ENVIRONMENT
 
 ENV GOOGLE_API_KEY=$GOOGLE_API_KEY
 ENV GOOGLE_CSE_ID=$GOOGLE_CSE_ID
@@ -35,6 +39,7 @@ ENV OPENAI_API_KEY=$OPENAI_API_KEY
 ENV FIREBASE_API_KEY=$FIREBASE_API_KEY
 ENV DISCORD_TOKEN=$DISCORD_TOKEN
 ENV GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
+ENV ENVIRONMENT=$ENVIRONMENT
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
