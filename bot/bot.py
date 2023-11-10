@@ -72,7 +72,7 @@ class SongBot(Bot):
             )
 
     # Scheduled message from GameSpot (every 12 hours)
-    @tasks.loop(hours=1)
+    @tasks.loop(hours=80)
     async def gamespot_scheduled_message(self):
         channel = self.get_channel(self.CHANNEL_NAME_2_ID["general"])
         daystate = get_day_state()
