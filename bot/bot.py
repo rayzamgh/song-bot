@@ -14,7 +14,7 @@ class SongBot(Bot):
     # Static dictionary mapping channel names to their respective IDs
     CHANNEL_NAME_2_ID = {
         "command": 597400055644815400,
-        "general": 596681723593621570,
+        "shmucks": 1172603107574808669,
         "memes": 926870487534026792
     }
 
@@ -72,9 +72,9 @@ class SongBot(Bot):
             )
 
     # Scheduled message from GameSpot (every 12 hours)
-    @tasks.loop(hours=80)
+    @tasks.loop(hours=12)
     async def gamespot_scheduled_message(self):
-        channel = self.get_channel(self.CHANNEL_NAME_2_ID["general"])
+        channel = self.get_channel(self.CHANNEL_NAME_2_ID["shmucks"])
         daystate = get_day_state()
 
         if channel and self.isactive:
@@ -102,9 +102,9 @@ class SongBot(Bot):
             pass
 
     # Scheduled conversation starter (every 6 hours)
-    @tasks.loop(hours=100)
+    @tasks.loop(hours=8)
     async def convo_scheduled_message(self):
-        channel = self.get_channel(self.CHANNEL_NAME_2_ID["general"])
+        channel = self.get_channel(self.CHANNEL_NAME_2_ID["shmucks"])
         daystate = get_day_state()
 
         # Only post message if during day, morning or evening

@@ -24,10 +24,14 @@ from langchain.agents import OpenAIFunctionsAgent
 from langchain.agents import AgentExecutor
 from langchain.chains import SequentialChain
 from utils import get_original_message, get_current_formatted_datetime
+from module.message.interraction.read_image import extract_image
 from langchain.prompts import (
     FewShotChatMessagePromptTemplate,
     ChatPromptTemplate,
 )
+from PIL import Image
+import io
+import requests
 
 # TODO
 
@@ -62,11 +66,11 @@ class SongAgent:
     mem_model: BaseLanguageModel = ChatOpenAI(
         model_name="gpt-3.5-turbo-16k", temperature=0)
     style_model: BaseLanguageModel = ChatOpenAI(
-        model_name="ft:gpt-3.5-turbo-1106:personal::8IwKijay", temperature=1)
+        model_name="ft:gpt-3.5-turbo-1106:personal::8IwKijay", temperature=0.8)
     chat_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-3.5-turbo-1106", max_tokens=1256, temperature=0.4)
+        model_name="gpt-4", temperature=0.3)
 
-    def __init__(self, complex_agent=True):
+    def __init__(self, complex_agent=False):
         """
         Initialize the SongAgent with default keeper, toolkit, memory and chain.
         """
@@ -325,15 +329,35 @@ class SongAgent:
             incoming_message = incoming_message.replace(
                 f"<@{user.id}>", user.name)
 
-        # if message.type is MessageType.reply:
-        #     input_message = f"At {get_current_formatted_datetime()}, {sender.name} replies to {self.preprocess_message(original_message.content)}, with: {self.preprocess_message(incoming_message)}"
-        # else:
-        #     input_message = f"At {get_current_formatted_datetime()}, {sender.name} says : {self.preprocess_message(incoming_message)}"
-
         if message.type is MessageType.reply:
-            input_message = f"{sender.name} menjawab {self.preprocess_message(original_message.content)}, dia bilang: {self.preprocess_message(incoming_message)}"
+            print("YES REPLY")
+            if original_message.attachments:
+                print("YES ATTCH")
+                print(original_message.attachments)
+                for attachment in original_message.attachments:
+                    if any(attachment.filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif']):
+                        # Download and process the image
+                        print("Got image")
+                        print(attachment.url)
+
+                        response = requests.get(attachment.url)
+                        image = Image.open(io.BytesIO(response.content))
+
+                        print(image)
+                        
+                        # Process the image (example function call)
+                        image_content = extract_image(image, f"Jelaskan apa yang ada dalam gambar ini, lalu jawab : {incoming_message}")
+
+                        print("image_content IS!")
+                        print(image_content)
+
+                        input_message = f"Terdapat gambar yang berisi: \"{image_content}.\". Terkait gambar ini, {sender.name} bilang: \"{self.preprocess_message(incoming_message)}\""
+            else:
+                print("NO ATTCH")
+                print(original_message.attachments)
+                input_message = f"untuk menjawab kalimat : \"{self.preprocess_message(original_message.content)}.\" {sender.name} bilang: \"{self.preprocess_message(incoming_message)}\""
         else:
-            input_message = f"{sender.name} bilang: {self.preprocess_message(incoming_message)}"
+            input_message = f"\"{sender.name} bilang:\" {self.preprocess_message(incoming_message)}"
 
         return input_message
     
