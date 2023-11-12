@@ -1,4 +1,4 @@
-langchain==0.0.331
+langchain==0.0.334
 langchain-experimental==0.0.40
 python-dotenv
 discord.py==2.3.1
