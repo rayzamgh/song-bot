@@ -1,14 +1,27 @@
-import copy
-from typing import Dict, List, Optional
+import io
+import requests
+from typing import Dict, List
 from discord import Message, User, MessageType
-from datetime import datetime
+from google.cloud import firestore
 from langchain.agents import AgentType, initialize_agent, Tool
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.base_language import BaseLanguageModel
 from langchain.utilities import WikipediaAPIWrapper, GoogleSearchAPIWrapper, ArxivAPIWrapper
 from langchain.chains import LLMChain
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate
+from langchain.prompts.chat import (ChatPromptTemplate,
+                                    HumanMessagePromptTemplate,
+                                    MessagesPlaceholder,
+                                    SystemMessagePromptTemplate)
+from langchain.prompts.prompt import PromptTemplate
+from langchain.agents import OpenAIFunctionsAgent
+from langchain.prompts import (
+    FewShotChatMessagePromptTemplate,
+    ChatPromptTemplate,
+)
+from utils import get_original_message
+from interractor.image import ImageInterractor
+from PIL import Image
 from .prompts import (ENTITY_SUMMARIZATION_PROMPT,
                       ENTITY_EXTRACTION_PROMPT,
                       SONG_PREFIX,
@@ -18,44 +31,7 @@ from .prompts import (ENTITY_SUMMARIZATION_PROMPT,
                       SONG_TALK_TEMPLATE)
 from .memory import FirestoreEntityStore, FirestoreChatMessageHistory, ChatConversationEntityMemory
 from .agent_keeper import SongKeeper
-from google.cloud import firestore
-from langchain.prompts.prompt import PromptTemplate
-from langchain.agents import OpenAIFunctionsAgent
-from langchain.agents import AgentExecutor
-from langchain.chains import SequentialChain
-from utils import get_original_message, get_current_formatted_datetime
-from module.message.interraction.read_image import extract_image
-from langchain.prompts import (
-    FewShotChatMessagePromptTemplate,
-    ChatPromptTemplate,
-)
-from PIL import Image
-import io
-import requests
 
-# TODO
-
-# In addition to the existing keeper status parameters ("mood", "busyness", "current_activity"), you might want to consider including the following:
-
-# Datetime: The current date and time would be useful, especially if the bot's responses depend on the time of day.
-
-# Activity Duration: How long the bot has been performing the current activity.
-
-# Location: If the bot is designed to simulate being in a particular place, this could be a useful attribute.
-
-# Energy Level: This could simulate the bot's "endurance" and may influence how it interacts with users.
-
-# Task Progress: If the bot is performing a long-running task, it could be useful to track how much of the task has been completed.
-
-# Interaction Count: You can track how many interactions the bot has had in a given period.
-
-# Last Interaction: Time since the last interaction.
-
-# Mode: The bot could have different modes, like "idle", "busy", "interactive", "do not disturb", etc.
-
-# Previous Task: What the bot was doing before the current activity.
-
-# Upcoming Task: What the bot is scheduled to do next.
 
 
 class SongAgent:
@@ -82,6 +58,9 @@ class SongAgent:
         self.executor = self.load_agent() if complex_agent else self.load_chain()
         self.talk_chain = self.load_talk_chain()
         self.talking_style_chain = self.load_talking_style_chain()
+
+        # Interractors Used
+        self.image_interractor: ImageInterractor = ImageInterractor()
 
     def load_keeper(self) -> Dict[str, str]:
         """
@@ -124,7 +103,7 @@ class SongAgent:
 
         message_history = FirestoreChatMessageHistory(client=firestore_client)
         main_memory = ChatConversationEntityMemory(llm=self.mem_model,
-                                                   k=8,
+                                                   k=4,
                                                    input_key="input",
                                                    chat_history_key="history",
                                                    chat_memory=message_history,
@@ -141,17 +120,17 @@ class SongAgent:
         Load the talking style chain for Song
         """
 
-        examples = [    
+        examples = [
             {
-                "input": "Hahaha, bener juga tuh, gue emang agak terlalu sabi ya. Makasih udah mengingetin, Rayza. Gue bakal coba lebih chill lagi ke depannya.", 
+                "input": "Hahaha, bener juga tuh, gue emang agak terlalu sabi ya. Makasih udah mengingetin, Rayza. Gue bakal coba lebih chill lagi ke depannya.",
                 "output": "Haha, iya kadang2 gue emg kelewatan, thanks udh ngingetin ya, Rayza. Gua coba lebih chill lagi kedepannya."
             },
             {
-                "input": "Haha, makasih banget, Rayza, udah cerita yang detail tentang kuliahmu. Gue seneng banget liat semangat dan dedikasimu dalam belajar dan berorganisasi. Pastinya, seimbangin antara akademik dan sosial tuh penting banget buat hidupin masa mahasiswa. Terus tetep semangat ya dan semoga sukses ngejar impian di masa depan. Makasih juga udah share linknya, nanti gue cek ya!", 
+                "input": "Haha, makasih banget, Rayza, udah cerita yang detail tentang kuliahmu. Gue seneng banget liat semangat dan dedikasimu dalam belajar dan berorganisasi. Pastinya, seimbangin antara akademik dan sosial tuh penting banget buat hidupin masa mahasiswa. Terus tetep semangat ya dan semoga sukses ngejar impian di masa depan. Makasih juga udah share linknya, nanti gue cek ya!",
                 "output": "Wkwk, makasih, Ray, udh cerita kuliah lu. Gue seneng aja sihh liat dedikasi looo belajar sama organisasi gitu gitu. Susah dan penting sih yaa yang kayak gitu gitu tuh. Mangat terus yak ngejar impian lo."
             },
             {
-                "input": "Kamu bisa mengenal diriku dari obrolan yang kita lalui sehari-hari. Detik demi detik, menit demi menit, setiap obrolan kita akan membuatmu mengenalku lebih dekat.", 
+                "input": "Kamu bisa mengenal diriku dari obrolan yang kita lalui sehari-hari. Detik demi detik, menit demi menit, setiap obrolan kita akan membuatmu mengenalku lebih dekat.",
                 "output": "Lo bisa kenalan sama gue dari ngobrol sehari-hari ko. Detik, menit tiap kita ngomong kan jadi makin kenal ya gak?"
             }
         ]
@@ -188,39 +167,22 @@ class SongAgent:
         Load the talk chain for Song
         """
 
-        examples = [    
-            {
-                "input": """The staff for Mari Okada and MAPPA's original anime film Maboroshi (Alice to Therese no Maboroshi Kōjō, or literally, Alice and Therese's Illusory Factory) debuts its full trailer on Wednesday. The trailer previews Miyuki Nakajima's theme song "Shin-on" (Heartbeat), and it also confirms the characters for more cast members (previously revealed in a poster visual last Friday
+        # example_prompt = ChatPromptTemplate.from_messages(
+        #     [
+        #         ("human", "{input}"),
+        #         ("ai", "{output}"),
+        #     ]
+        # )
 
-                The newly confirmed cast members and their roles include:
-
-                Taku Yashiro as Daisuke Sasakura
-                Tasuku Hatanaka as Atsushi Nitta
-                Daiki Kobayashi as Yasunari Semba
-                Ayaka Saito as Yūko Sonobe
-                Maki Kawase as Hina Hara
-                Yukiyo Fujii as Reina Yasumi
-                Setsuji Satoh as Mamoru Sagami""", 
-                "output": """Yo, jadi gw denger-denger ada trailer baru buat anime film orisinal dari Mari Okada dan MAPPA, namanya "Maboroshi". Judul lengkapnya sih "Alice and Therese's Illusory Factory". Lagu temanya "Shin-on" (Heartbeat) dari Miyuki Nakajima. Gw liat juga ada beberapa nama karakter yang udah diumumin sebelumnya. Hmmm okk deh, Semoga bagus filmnya."""
-            }
-        ]
-
-        example_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("human", "{input}"),
-                ("ai", "{output}"),
-            ]
-        )
-
-        few_shot_prompt = FewShotChatMessagePromptTemplate(
-            example_prompt=example_prompt,
-            examples=examples,
-        )
+        # few_shot_prompt = FewShotChatMessagePromptTemplate(
+        #     example_prompt=example_prompt,
+        #     examples=None,
+        # )
 
         final_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", SONG_TALK_TEMPLATE),
-                few_shot_prompt,
+                # few_shot_prompt,
                 ("human", "{input}"),
             ]
         )
@@ -296,12 +258,12 @@ class SongAgent:
         print(input_variables)
 
         final_prompt = ChatPromptTemplate(
-            input_variables=input_variables, 
+            input_variables=input_variables,
             messages=messages
         )
-        
+
         agent_executor = initialize_agent(
-            llm=self.chat_model, 
+            llm=self.chat_model,
             tools=self.toolkit,
             agent=AgentType.OPENAI_FUNCTIONS,
             memory=self.main_memory,
@@ -317,7 +279,7 @@ class SongAgent:
         """
         return raw_input.replace('<@1132625921636048977>', 'Song')
 
-    def prep_message(self, message: Message, original_message : Message = None) -> str:
+    def prep_message(self, message: Message, original_message: Message = None) -> str:
         """
         Prepare message as a whole for the chain to run
         """
@@ -335,7 +297,7 @@ class SongAgent:
                 print("YES ATTCH")
                 print(original_message.attachments)
                 for attachment in original_message.attachments:
-                    if any(attachment.filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif']):
+                    if any(attachment.filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.webp']):
                         # Download and process the image
                         print("Got image")
                         print(attachment.url)
@@ -344,9 +306,10 @@ class SongAgent:
                         image = Image.open(io.BytesIO(response.content))
 
                         print(image)
-                        
-                        # Process the image (example function call)
-                        image_content = extract_image(image, f"Jelaskan apa yang ada dalam gambar ini, lalu jawab : {incoming_message}")
+
+                        # Process the image
+                        image_content = self.image_interractor.extract_image(
+                            image, f"Jelaskan apa yang ada dalam gambar ini, lalu jawab : {incoming_message}")
 
                         print("image_content IS!")
                         print(image_content)
@@ -360,7 +323,7 @@ class SongAgent:
             input_message = f"\"{sender.name} bilang:\" {self.preprocess_message(incoming_message)}"
 
         return input_message
-    
+
     def add_knowledge(self, input):
         """
         Manually adds knowledge to bot
@@ -373,15 +336,16 @@ class SongAgent:
         """
         Process a new message and generate an appropriate response using the chat chain, async.
         """
-        
+
         # Get Replies if any
         original_message = await get_original_message(message) if message.reference else None
-        
+
         print("SONG STATUS:")
         print(self.keeper.status)
-        
+
         input_message = self.prep_message(message, original_message)
-        raw_output = self.executor.run(input=input_message, **self.keeper.status)
+        raw_output = self.executor.run(
+            input=input_message, **self.keeper.status)
         raw_output = await self.talking_style_chain.arun(raw_output)
 
         raw_output = raw_output.replace("!", ".")
@@ -392,7 +356,7 @@ class SongAgent:
         """
         Process a scheduled message, async.
         """
-        
+
         # Saves knowledge of the topic
         self.add_knowledge(talking_topic)
 
@@ -402,7 +366,5 @@ class SongAgent:
         self.main_memory.chat_memory.add_ai_message(raw_output)
 
         raw_output = raw_output.replace("!", ".")
-        
-        return raw_output
-    
 
+        return raw_output

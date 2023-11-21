@@ -5,7 +5,7 @@ from utils import get_current_datetime, get_current_formatted_datetime, get_curr
 import random
 
 class SongKeeper:
-    """This class represents a SongBot's status, 
+    """This class represents SongBot's status, 
     including the current condition and environment.
     """
 
@@ -181,10 +181,10 @@ class SongKeeper:
             "chill",
             "angsty",
             "angry",
+            "super angry",
             "tired",
             "happy",
             "lovely",
-            "horny"
         ]
 
         self.condition["mood"] = random.choice(CHOICE_OF_MOOD)

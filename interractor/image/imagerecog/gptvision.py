@@ -3,7 +3,7 @@ import io
 from langchain.chat_models import ChatOpenAI
 from langchain.schema.messages import HumanMessage
 
-def encode_image_pil(image):
+def _encode_image_pil(image):
     ''' Convert PIL Image to base64 string '''
     buffered = io.BytesIO()
     image.save(buffered, format="JPEG")
@@ -13,7 +13,7 @@ def encode_image_pil(image):
 def extract_image(image, prompt):
     ''' Extracts information from a PIL Image using GPT-4 Vision Preview model '''
     # Encode the image to base64
-    img_base64 = encode_image_pil(image)
+    img_base64 = _encode_image_pil(image)
 
     # Initialize the ChatOpenAI model
     chat = ChatOpenAI(model="gpt-4-vision-preview", max_tokens=1024)

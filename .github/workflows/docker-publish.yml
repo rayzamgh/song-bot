@@ -40,7 +40,6 @@ jobs:
         GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
         CLIENT_ID: ${{ secrets.CLIENT_ID }}
         CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-        CHATGPT_KEY: ${{ secrets.CHATGPT_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
@@ -51,7 +50,6 @@ jobs:
           --build-arg GOOGLE_CSE_ID=$GOOGLE_CSE_ID \
           --build-arg CLIENT_ID=$CLIENT_ID \
           --build-arg CLIENT_SECRET=$CLIENT_SECRET \
-          --build-arg CHATGPT_KEY=$CHATGPT_KEY \
           --build-arg OPENAI_API_KEY=$OPENAI_API_KEY \
           --build-arg FIREBASE_API_KEY=$FIREBASE_API_KEY \
           --build-arg DISCORD_TOKEN=$DISCORD_TOKEN \

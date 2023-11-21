@@ -49,6 +49,6 @@ class Router:
         route : RouterTypes, 
         message : Message,
     ):  
-        for module_name in self.modules.keys():
-            if module_name == route:
-                await self.modules[module_name].execute(message)
+        if route:
+            print(f"{route=}")
+            await self.modules[route].execute(message)

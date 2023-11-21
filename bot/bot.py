@@ -2,11 +2,13 @@
 from router import Router
 from discord.ext.commands import Bot
 from module.message.agent import SongAgent
+from interractor.image import ImageInterractor
 from discord.ext import tasks
-from datetime import datetime, time
-from utils import get_current_datetime, get_day_state, get_current_formatted_datetime
+from utils import get_day_state
 from bot.apis import GameSpotAPI
 import os
+import random
+import discord
 
 # SongBot is a custom Discord bot designed to interact with users, specifically around the topic of songs and games.
 class SongBot(Bot):
@@ -26,7 +28,8 @@ class SongBot(Bot):
 
         # Setup for message routing and song management
         self.active_router: Router = Router()
-        self.local_agent: SongAgent = self.active_router.modules[Router.RouterTypes.MESSAGE].song_agent
+        self.chat_agent: SongAgent = self.active_router.modules[Router.RouterTypes.MESSAGE].song_agent
+        self.image_interractor: ImageInterractor = ImageInterractor()
 
         # Setup for GameSpot API utility
         self.gamespot: GameSpotAPI = GameSpotAPI(os.environ.get("GAMESPOT_API_KEY"))
@@ -72,7 +75,7 @@ class SongBot(Bot):
             )
 
     # Scheduled message from GameSpot (every 12 hours)
-    @tasks.loop(hours=12)
+    @tasks.loop(hours=9)
     async def gamespot_scheduled_message(self):
         channel = self.get_channel(self.CHANNEL_NAME_2_ID["shmucks"])
         daystate = get_day_state()
@@ -84,7 +87,7 @@ class SongBot(Bot):
             print(talking_point)
 
             # Convert talking point into a message via SongAgent
-            talk = await self.local_agent.atalk(talking_point)
+            talk = await self.chat_agent.atalk(talking_point)
 
             for key, value in extra_info.items():
                 talk = value + "\n" + talk
@@ -109,12 +112,17 @@ class SongBot(Bot):
 
         # Only post message if during day, morning or evening
         if channel and daystate in ["morning", "day", "evening"] and self.isactive:
-            talking_point = f"Hi guys, baru aja gue {self.local_agent.keeper.activity_log[-1]}, ngapain lagi yak {daystate} gini?"
+            
+            # Update Profile Image
+            await self.image_interractor.update_song_picture(self.chat_agent.keeper.activity_log[-1], self)
+
+            # Chat the latest activity
+            talking_point = f"Hi guys, baru aja gue {self.chat_agent.keeper.activity_log[-1]}, ngapain lagi yak {daystate} gini?"
             print("=============== talking_point ===============")
             print(talking_point)
 
             # Convert talking point into a message via SongAgent
-            talk = await self.local_agent.atalk(talking_point)
+            talk = await self.chat_agent.atalk(talking_point)
             await channel.send(talk)
 
     # Additional error handling for the scheduled conversation message task
@@ -130,7 +138,40 @@ class SongBot(Bot):
     # Scheduled task to advance the song clock (every 15 minutes)
     @tasks.loop(minutes=15)
     async def advance_song_clock(self):
-        await self.local_agent.keeper.advance_clock()
+        await self.chat_agent.keeper.advance_clock()
+
+        song_choice = [
+            "『SHINKIRO』GuraMarine",
+            "疾走 Naoshi Mizuta",
+            "月追いの都市〜canoue ver.〜 / 歌:霜月はるか",
+            "Laufey - From The Start",
+            "Laufey - Bewitched · 2023",
+            "Laufey - Falling Behind",
+            "Laufey - Everything I Know About Love · 2022",
+            "Laufey - Let You Break My Heart Again · 2021",
+            "Laufey - Valentine",
+            "Laufey - Promise",
+            "Laufey - A Night To Remember · 2023",
+            "Laufey - This Is How It Feels",
+            "Laufey - Petals to Thorns · 2023",
+            "Laufey - California and Me",
+            "廻廻奇譚 (Kaikai Kitan) - Eve (JPN)",
+            "ファイトソング (Fight Song) - Eve (JPN)",
+            "ドラマツルギー (Dramaturgy) - Eve (JPN)",
+            "ぼくらの (Bokurano) - Eve (JPN)",
+            "蒼のワルツ (Ao No Waltz) - Eve (JPN)",
+            "あの娘シークレット (Anoko Secret) - Eve (JPN)",
+            "心海 (Shinkai) - Eve (JPN)",
+            "いのちの食べ方 (Inochi no Tabekata) - Eve (JPN)",
+            "​Raison d’etre - Eve (JPN)",
+            "宵の明星 (Yoino Myojo) - Eve (JPN)",
+            "アヴァン (Avant) - Eve (JPN)",
+            "As You Like It - Eve (JPN)",
+            "杪夏 (Byouka) - Eve (JPN)",
+        ]
+
+        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=random.choice(song_choice)))
+
 
     # Additional error handling for the song clock advancing task
     @advance_song_clock.before_loop
