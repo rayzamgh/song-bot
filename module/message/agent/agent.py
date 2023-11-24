@@ -24,6 +24,7 @@ from interractor.image import ImageInterractor
 from PIL import Image
 from .prompts import (ENTITY_SUMMARIZATION_PROMPT,
                       ENTITY_EXTRACTION_PROMPT,
+                      PERSON_INFORMATION_EXTRACTION_PROMPT,
                       SONG_PREFIX,
                       SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
                       SONG_INPUT_TEMPLATE,
@@ -103,11 +104,12 @@ class SongAgent:
 
         message_history = FirestoreChatMessageHistory(client=firestore_client)
         main_memory = ChatConversationEntityMemory(llm=self.mem_model,
-                                                   k=4,
+                                                   k=5,
                                                    input_key="input",
                                                    chat_history_key="history",
                                                    chat_memory=message_history,
                                                    entity_summarization_prompt=ENTITY_SUMMARIZATION_PROMPT,
+                                                   human_entity_summarization_prompt=PERSON_INFORMATION_EXTRACTION_PROMPT,
                                                    entity_extraction_prompt=ENTITY_EXTRACTION_PROMPT,
                                                    return_messages=True,
                                                    entity_store=FirestoreEntityStore(
@@ -233,7 +235,7 @@ class SongAgent:
         """
 
         SONG_SYSTEM_ENTITY_MEMORY_CONVERSATION_PROMPT_TEMPLATE = PromptTemplate(
-            input_variables=["entities"] + list(self.keeper.status.keys()),
+            input_variables=["entities", "sender", "sender_summary"] + list(self.keeper.status.keys()),
             template=SONG_PREFIX + SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
         )
 
@@ -316,21 +318,24 @@ class SongAgent:
 
                         input_message = f"Terdapat gambar yang berisi: \"{image_content}.\". Terkait gambar ini, {sender.name} bilang: \"{self.preprocess_message(incoming_message)}\""
             else:
-                print("NO ATTCH")
                 print(original_message.attachments)
                 input_message = f"untuk menjawab kalimat : \"{self.preprocess_message(original_message.content)}.\" {sender.name} bilang: \"{self.preprocess_message(incoming_message)}\""
         else:
             input_message = f"\"{sender.name} bilang:\" {self.preprocess_message(incoming_message)}"
 
+        self.add_knowledge({"input" : input_message, "name": sender.name}, type="person")
+
         return input_message
 
-    def add_knowledge(self, input):
+    def add_knowledge(self, input, type="generic"):
         """
         Manually adds knowledge to bot
         """
 
-        _input = {"input": input}
-        self.main_memory.save_knowledge(_input)
+        if type == "generic":
+            self.main_memory.save_knowledge(input)
+        elif type == "person":
+            self.main_memory.save_knowledge_person(input)
 
     async def arun(self, message: Message) -> str:
         """
@@ -343,9 +348,13 @@ class SongAgent:
         print("SONG STATUS:")
         print(self.keeper.status)
 
+        sender_summary = self.main_memory.entity_store.get(message.author.name, "They are a person that you just met")
+        print(f"You are speaking to {message.author.name}")
+        print(sender_summary)
+
         input_message = self.prep_message(message, original_message)
         raw_output = self.executor.run(
-            input=input_message, **self.keeper.status)
+            input=input_message, **self.keeper.status | {"sender" : message.author.name, "sender_summary" : sender_summary})
         raw_output = await self.talking_style_chain.arun(raw_output)
 
         raw_output = raw_output.replace("!", ".")
@@ -358,7 +367,7 @@ class SongAgent:
         """
 
         # Saves knowledge of the topic
-        self.add_knowledge(talking_topic)
+        self.add_knowledge({"input": talking_topic})
 
         raw_output = await self.talk_chain.arun(talking_topic)
         # raw_output = await self.talking_style_chain.arun(raw_output)

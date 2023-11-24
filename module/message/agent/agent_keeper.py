@@ -18,7 +18,6 @@ class SongKeeper:
         self.condition = {
             "mood": "chill",
             "busyness": "not busy",
-            "current_activity": "working from home",
         }
 
         self.environment = {
@@ -170,7 +169,7 @@ class SongKeeper:
 
         self.activity_log.append(f"Di jam {time_now}, gue {selected_activity}, {details['description']}")
 
-        self.hunger -= details['satisfy']
+        self.boredom -= details['satisfy']
         self.boredom = max(0, self.boredom)
         
         
