@@ -90,6 +90,14 @@ class SongKeeper:
             self.swing_mood()
 
         print("Song clock advanced!")
+        print("self.hunger")
+        print(self.hunger)
+        print("self.boredom")
+        print(self.boredom)
+        print("self.mood_swing")
+        print(self.mood_swing)
+        print("self.status")
+        print(self.status)
 
     def feed(self):
 
@@ -188,4 +196,4 @@ class SongKeeper:
 
         self.condition["mood"] = random.choice(CHOICE_OF_MOOD)
 
-        self.boredom = 0
+        self.mood_swing = 0

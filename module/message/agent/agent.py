@@ -82,7 +82,7 @@ class SongAgent:
             Tool(
                 name="Search",
                 func=search.run,
-                description="For when you are trying to search the internet for new information"),
+                description="For when you are trying to search the internet for informations you are not aware the answer to."),
             Tool(
                 name="Wikipedia",
                 func=wikipedia.run,
@@ -319,7 +319,7 @@ class SongAgent:
                         input_message = f"Terdapat gambar yang berisi: \"{image_content}.\". Terkait gambar ini, {sender.name} bilang: \"{self.preprocess_message(incoming_message)}\""
             else:
                 print(original_message.attachments)
-                input_message = f"untuk menjawab kalimat : \"{self.preprocess_message(original_message.content)}.\" {sender.name} bilang: \"{self.preprocess_message(incoming_message)}\""
+                input_message = f"untuk menjawab kalimat, \"{self.preprocess_message(original_message.content)}.\" dari {original_message.author.name}. {sender.name} bilang, \"{self.preprocess_message(incoming_message)}\""
         else:
             input_message = f"\"{sender.name} bilang:\" {self.preprocess_message(incoming_message)}"
 

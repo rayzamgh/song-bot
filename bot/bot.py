@@ -77,6 +77,9 @@ class SongBot(Bot):
     # Scheduled message from GameSpot (every 12 hours)
     @tasks.loop(hours=9)
     async def gamespot_scheduled_message(self):
+
+        print("Scheduled gamestop!")
+
         channel = self.get_channel(self.CHANNEL_NAME_2_ID["shmucks"])
         daystate = get_day_state()
 
@@ -104,14 +107,17 @@ class SongBot(Bot):
         if self.gamespot_scheduled_message.failed():
             pass
 
-    # Scheduled conversation starter (every 6 hours)
+    # Scheduled conversation starter
     @tasks.loop(hours=8)
     async def convo_scheduled_message(self):
+        
+        print("Scheduled convo!")
+
         channel = self.get_channel(self.CHANNEL_NAME_2_ID["shmucks"])
         daystate = get_day_state()
 
         # Only post message if during day, morning or evening
-        if channel and daystate in ["morning", "day", "evening"] and self.isactive:
+        if channel and daystate in ["morning", "day", "evening", "night"] and self.isactive:
             
             # Update Profile Image
             await self.image_interractor.update_song_picture(self.chat_agent.keeper.activity_log[-1], self)
