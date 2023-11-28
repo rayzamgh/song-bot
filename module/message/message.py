@@ -5,7 +5,7 @@ from module.message.agent import SongAgent
 class MessageModule(BaseModule):
     def __init__(self):
         # Initiate module dependencies e.g. openai client & youtube client
-        self.song_agent : SongAgent = SongAgent(complex_agent=True)
+        self.song_agent : SongAgent = SongAgent(complex_agent=False)
     
     async def execute(self, message : Message, args : dict = None):
         
