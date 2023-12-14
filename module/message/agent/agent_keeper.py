@@ -104,39 +104,39 @@ class SongKeeper:
         CHOICE_OF_FOOD = {
             "wafer beng beng": {
                 "description": "buat ganjel perut aja",
-                "satisfy": 20,
+                "satisfaction": 20,
             },
             "nasi padang": {
                 "description": "deket benhill, kenyang banget gue",
-                "satisfy": 60,
+                "satisfaction": 60,
             },
             "nasi goreng": {
                 "description": "spesial pake telur mata sapi di atasnya",
-                "satisfy": 50,
+                "satisfaction": 50,
             },
             "es krim": {
                 "description": "seger bener, wkwkwk",
-                "satisfy": 35,
+                "satisfaction": 35,
             },
             "rendang": {
                 "description": "Empuknya rendang ini, lumer di mulut gue!",
-                "satisfy": 65,
+                "satisfaction": 65,
             },
             "sate ayam": {
                 "description": "gosong anjir wkwkwk",
-                "satisfy": 55,
+                "satisfaction": 55,
             },
             "gado-gado": {
                 "description": "Saus kacangnya mantul banget",
-                "satisfy": 40,
+                "satisfaction": 40,
             },
             "klepon": {
                 "description": "Manisnya keluar pas digigit",
-                "satisfy": 25,
+                "satisfaction": 25,
             },
             "pisang goreng": {
                 "description": "guilty pleasure favorit gw wkwkwk",
-                "satisfy": 30,
+                "satisfaction": 30,
             }
         }
 
@@ -146,7 +146,7 @@ class SongKeeper:
 
         self.activity_log.append(f"Di jam {time_now}, gue makan {selected_food}, {details['description']}")
 
-        self.hunger -= details['satisfy']
+        self.hunger -= details['satisfaction']
         self.hunger = max(0, self.hunger)
         
         
@@ -155,20 +155,52 @@ class SongKeeper:
         CHOICE_OF_ACTIVITY = {
             "jalan-jalan keluar": {
                 "description": "iseng aja gue muter daerah senopati, gk tau mau ngapain wkwk",
-                "satisfy": 20,
+                "satisfaction": 20
             },
             "main video game gta 5": {
                 "description": "free roam aja gangguin warga lokal sama polisi di game",
-                "satisfy": 60,
+                "satisfaction": 60
             },
             "main video game dragon ball": {
-                "description": f"tadi diajakin main sama Rayza, gue {'menang' if random.choice([True, False]) else 'kalah'} donggggg",
-                "satisfy": 60,
+                "description": "tadi diajakin main sama Rayza, gue menang donggggg",
+                "satisfaction": 60
             },
             "rewatch inuyasha": {
                 "description": "kangen aja gw sama inuyasha pengen nonton, haha",
-                "satisfy": 40,
+                "satisfaction": 40
             },
+            "main video game cyberpunk 2077": {
+                "description": "exploring Night City, cari side quest yang belum kelar",
+                "satisfaction": 70
+            },
+            "nonton anime attack on titan": {
+                "description": "ngikutin season terakhir, penasaran banget sama endingnya",
+                "satisfaction": 50
+            },
+            "baca manga one piece": {
+                "description": "update chapter terbaru, seru banget arc Wano ini!",
+                "satisfaction": 55
+            },
+            "ngoding project web": {
+                "description": "develop website pribadi, lagi belajar React.js nih",
+                "satisfaction": 65
+            },
+            "main video game the witcher 3": {
+                "description": "ngejar quest The Bloody Baron, ceritanya top abis",
+                "satisfaction": 75
+            },
+            "belajar bahasa Jepang": {
+                "description": "ngerjain latihan kanji, target bisa nonton anime tanpa subtitle",
+                "satisfaction": 45
+            },
+            "main video game valorant": {
+                "description": "main ranked sama teman, target naik ke Platinum",
+                "satisfaction": 60
+            },
+            "nonton film studio ghibli": {
+                "description": "maraton film-film Hayao Miyazaki, mulai dari Spirited Away",
+                "satisfaction": 50
+            }
         }
 
         selected_activity, details = random.choice(list(CHOICE_OF_ACTIVITY.items()))
@@ -177,7 +209,7 @@ class SongKeeper:
 
         self.activity_log.append(f"Di jam {time_now}, gue {selected_activity}, {details['description']}")
 
-        self.boredom -= details['satisfy']
+        self.boredom -= details['satisfaction']
         self.boredom = max(0, self.boredom)
         
         

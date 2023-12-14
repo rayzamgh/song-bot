@@ -85,7 +85,7 @@ class SongBot(Bot):
 
         if channel and self.isactive:
             # Get a talking point from GameSpot API
-            talking_point, extra_info = self.gamespot.get_song_babble(GameSpotAPI.Topics.ARTICLES)
+            talking_point, extra_info = await self.gamespot.get_song_babble(GameSpotAPI.Topics.ARTICLES)
             print("=============== talking_point ===============")
             print(talking_point)
 
