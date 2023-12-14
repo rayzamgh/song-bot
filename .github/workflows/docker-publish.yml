@@ -8,7 +8,8 @@ env:
   IMAGE_NAME: song-bot
   GCR_HOST: gcr.io/portfolio-web-249407
   GCE_INSTANCE_ZONE : us-central1-c
-  GCE_INSTANCE_NAME : instance-template-1
+  GCE_INSTANCE_NAME : song-bot
+  INSTANCE_TEMPLATE_NAME : instance-template-1
 
 jobs:
   build-and-push:
