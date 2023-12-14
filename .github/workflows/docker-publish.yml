@@ -58,8 +58,19 @@ jobs:
         docker tag $IMAGE_NAME $GCR_HOST/$IMAGE_NAME-latest
         docker push $GCR_HOST/$IMAGE_NAME-latest
 
-    # - name: SSH into GCE and pull Docker image
-    #   run: |
-    #     gcloud compute ssh --zone $GCE_INSTANCE_ZONE $GCE_INSTANCE_NAME --command 'docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} && docker pull $GCR_HOST/$IMAGE_NAME-latest'
+    - name: Check if GCE instance exists
+      id: check_instance
+      run: |
+        if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
+          echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
+        else
+          echo "INSTANCE_EXISTS=false" >> $GITHUB_ENV
 
+    - name: Delete existing GCE instance
+      if: env.INSTANCE_EXISTS == 'true'
+      run: |
+        gcloud compute instances delete $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --quiet
 
+    - name: Create new GCE instance from template
+      run: |
+        gcloud compute instances create $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --source-instance-template=$INSTANCE_TEMPLATE_NAME
