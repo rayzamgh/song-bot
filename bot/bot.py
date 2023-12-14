@@ -74,8 +74,8 @@ class SongBot(Bot):
                 route=Router.RouterTypes
             )
 
-    # Scheduled message from GameSpot (every 12 hours)
-    @tasks.loop(hours=9)
+    # Scheduled message from GameSpot (every 9 hours)
+    @tasks.loop(minutes=3)
     async def gamespot_scheduled_message(self):
 
         print("Scheduled gamestop!")

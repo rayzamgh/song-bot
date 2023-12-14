@@ -98,4 +98,9 @@ class GameSpotAPI:
         else:
             response = await self.get_latest_releases()
 
-        return construct_text(response, self.TOPIC_STRUCTURES[topic])
+        outp = construct_text(response, self.TOPIC_STRUCTURES[topic])
+
+        print("outputted gamespot!")
+        print(outp)
+
+        return outp
