@@ -49,7 +49,7 @@ class GameSpotAPI:
 
     async def get_latest_games(self, limit=10):
         today = datetime.today().strftime('%Y-%m-%d')
-        return self._get("games", {
+        return await self._get("games", {
             "limit": limit,
             "sort": "release_date:desc",
             "filter": f"release_date:{today}"
@@ -57,7 +57,7 @@ class GameSpotAPI:
 
     async def get_latest_releases(self, limit=10):
         today = datetime.today().strftime('%Y-%m-%d')
-        return self._get("releases", {
+        return await self._get("releases", {
             "limit": limit,
             "sort": "release_date:desc",
             "filter": f"release_date:{today}"
@@ -66,7 +66,7 @@ class GameSpotAPI:
     async def get_latest_articles(self, limit=10):
         today = datetime.today().strftime('%Y-%m-%d')
         yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
-        return self._get("articles", {
+        return await self._get("articles", {
             "limit": limit,
             "sort": "publish_date:desc",
             "filter": f"publish_date:{yesterday} 00:00:00|{today} 23:59:59"
