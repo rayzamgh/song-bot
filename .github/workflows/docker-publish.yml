@@ -59,12 +59,12 @@ jobs:
         docker push $GCR_HOST/$IMAGE_NAME-latest
 
     - name: Check if GCE instance exists 1 
-      id: check_instance 1
+      id: check_instance_1
       run: |
         gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE
 
     - name: Check if GCE instance exists 2
-      id: check_instance 2
+      id: check_instance_2
       run: |
         if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
           echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
