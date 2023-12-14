@@ -44,7 +44,7 @@ class GameSpotAPI:
         
         async with aiohttp.ClientSession() as session:
             print("HHAAAAAAAAAAAAAAAAAAAAAAAAAAAAHH")
-            print("{self.BASE_URL}{endpoint}/")
+            print(f"{self.BASE_URL}{endpoint}/")
             async with session.get(f"{self.BASE_URL}{endpoint}/", params=params, headers=headers) as response:
                 if response.status != 200:
                     raise aiohttp.HttpProcessingError(code=response.status, message=response.reason)
