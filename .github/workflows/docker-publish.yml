@@ -70,6 +70,7 @@ jobs:
           echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
         else
           echo "INSTANCE_EXISTS=false" >> $GITHUB_ENV
+        fi
 
     - name: Delete existing GCE instance
       if: env.INSTANCE_EXISTS == 'true'
