@@ -10,6 +10,7 @@ env:
   GCE_INSTANCE_ZONE : us-central1-c
   GCE_INSTANCE_NAME : song-bot
   INSTANCE_TEMPLATE_NAME : instance-template-1
+  PROJECT_ID: portfolio-web-249407
 
 jobs:
   build-and-push-image:
@@ -71,6 +72,7 @@ jobs:
 
       - name: Check if GCE instance exists
         run: |
+          gcloud config set project ${{ env.PROJECT_ID }}
           if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
             echo "::set-output name=instance_exists::true"
           else
