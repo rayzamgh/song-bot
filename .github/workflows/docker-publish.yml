@@ -10,7 +10,6 @@ env:
   GCE_INSTANCE_ZONE : us-central1-c
   GCE_INSTANCE_NAME : song-bot
   INSTANCE_TEMPLATE_NAME : instance-template-1
-  PROJECT_ID: portfolio-web-249407
 
 jobs:
   build-and-push-image:
@@ -60,7 +59,7 @@ jobs:
         docker tag $IMAGE_NAME $GCR_HOST/$IMAGE_NAME-latest
         docker push $GCR_HOST/$IMAGE_NAME-latest
 
-  check-instance:
+  manage-instance:
     runs-on: ubuntu-latest
     needs: build-and-push-image
     steps:
@@ -70,43 +69,24 @@ jobs:
           service_account_key: ${{ secrets.GCR_KEY }}
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Check if GCE instance exists
-        run: |
-          gcloud config set project ${{ env.PROJECT_ID }}
-          if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
-            echo "::set-output name=instance_exists::true"
-          else
-            echo "::set-output name=instance_exists::false"
-          fi
+    - name: Check if GCE instance exists 1 
+      id: check_instance_1
+      run: |
+        gcloud compute instances list $GCE_INSTANCE_NAME
 
-  delete-create-instance:
-    runs-on: ubuntu-latest
-    needs: check-instance
-    if: needs.check-instance.outputs.instance_exists == 'true'
-    steps:
-      - name: Setup gcloud CLI
-        uses: google-github-actions/setup-gcloud@v0.2.0
-        with:
-          service_account_key: ${{ secrets.GCR_KEY }}
-          project_id: ${{ env.PROJECT_ID }}
+    - name: Check if GCE instance exists
+      run: |
+        if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
+          echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
+        else
+          echo "INSTANCE_EXISTS=false" >> $GITHUB_ENV
+        fi
 
-      - name: Delete existing GCE instance
-        run: gcloud compute instances delete $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --quiet
+    - name: Delete existing GCE instance
+      if: env.INSTANCE_EXISTS == 'true'
+      run: |
+        gcloud compute instances delete $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --quiet
 
-      - name: Create new GCE instance from template
-        run: gcloud compute instances create $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --source-instance-template=$INSTANCE_TEMPLATE_NAME
-
-
-  create-instance:
-    runs-on: ubuntu-latest
-    needs: check-instance
-    if: needs.check-instance.outputs.instance_exists == 'false'
-    steps:
-      - name: Setup gcloud CLI
-        uses: google-github-actions/setup-gcloud@v0.2.0
-        with:
-          service_account_key: ${{ secrets.GCR_KEY }}
-          project_id: ${{ env.PROJECT_ID }}
-
-      - name: Create new GCE instance from template
-        run: gcloud compute instances create $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --source-instance-template=$INSTANCE_TEMPLATE_NAME
+    - name: Create new GCE instance from template
+      run: |
+        gcloud compute instances create $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --source-instance-template=$INSTANCE_TEMPLATE_NAME
