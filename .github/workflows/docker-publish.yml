@@ -59,24 +59,47 @@ jobs:
         docker tag $IMAGE_NAME $GCR_HOST/$IMAGE_NAME-latest
         docker push $GCR_HOST/$IMAGE_NAME-latest
 
-    - name: Check if GCE instance exists 1 
-      id: check_instance_1
-      run: |
-        gcloud compute instances list $GCE_INSTANCE_NAME
+  check-instance:
+    runs-on: ubuntu-latest
+    needs: build-and-push-image
+    steps:
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          service_account_key: ${{ secrets.GCR_KEY }}
+          project_id: ${{ env.PROJECT_ID }}
 
-    - name: Check if GCE instance exists
-      run: |
-        if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
-          echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
-        else
-          echo "INSTANCE_EXISTS=false" >> $GITHUB_ENV
-        fi
+      - name: Check if GCE instance exists
+        run: |
+          if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
+            echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "INSTANCE_EXISTS=false" >> $GITHUB_ENV
+          fi
 
-    - name: Delete existing GCE instance
-      if: env.INSTANCE_EXISTS == 'true'
-      run: |
-        gcloud compute instances delete $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --quiet
+  manage-instance:
+    runs-on: ubuntu-latest
+    needs: check-instance
+    if: env.INSTANCE_EXISTS == 'true'
+    steps:
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          service_account_key: ${{ secrets.GCR_KEY }}
+          project_id: ${{ env.PROJECT_ID }}
 
-    - name: Create new GCE instance from template
-      run: |
-        gcloud compute instances create $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --source-instance-template=$INSTANCE_TEMPLATE_NAME
+      - name: Delete existing GCE instance
+        run: gcloud compute instances delete $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --quiet
+
+
+  create-instance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          service_account_key: ${{ secrets.GCR_KEY }}
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Create new GCE instance from template
+        run: gcloud compute instances create $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --source-instance-template=$INSTANCE_TEMPLATE_NAME
