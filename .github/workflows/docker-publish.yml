@@ -69,24 +69,24 @@ jobs:
           service_account_key: ${{ secrets.GCR_KEY }}
           project_id: ${{ env.PROJECT_ID }}
 
-    - name: Check if GCE instance exists 1 
-      id: check_instance_1
-      run: |
-        gcloud compute instances list $GCE_INSTANCE_NAME
+      - name: Check if GCE instance exists 1 
+        id: check_instance_1
+        run: |
+          gcloud compute instances list $GCE_INSTANCE_NAME
 
-    - name: Check if GCE instance exists
-      run: |
-        if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
-          echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
-        else
-          echo "INSTANCE_EXISTS=false" >> $GITHUB_ENV
-        fi
+      - name: Check if GCE instance exists
+        run: |
+          if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
+            echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "INSTANCE_EXISTS=false" >> $GITHUB_ENV
+          fi
 
-    - name: Delete existing GCE instance
-      if: env.INSTANCE_EXISTS == 'true'
-      run: |
-        gcloud compute instances delete $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --quiet
+      - name: Delete existing GCE instance
+        if: env.INSTANCE_EXISTS == 'true'
+        run: |
+          gcloud compute instances delete $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --quiet
 
-    - name: Create new GCE instance from template
-      run: |
-        gcloud compute instances create $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --source-instance-template=$INSTANCE_TEMPLATE_NAME
+      - name: Create new GCE instance from template
+        run: |
+          gcloud compute instances create $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE --source-instance-template=$INSTANCE_TEMPLATE_NAME
