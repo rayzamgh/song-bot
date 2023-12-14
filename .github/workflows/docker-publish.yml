@@ -94,6 +94,7 @@ jobs:
 
   create-instance:
     runs-on: ubuntu-latest
+    needs: manage-instance
     steps:
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v0.2.0
