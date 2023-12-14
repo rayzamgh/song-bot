@@ -29,6 +29,7 @@ class GameSpotAPI:
 
     def __init__(self, api_key):
         self.api_key = api_key
+        self.BASE_URL = "http://www.gamespot.com/api/"
 
     async def _get(self, endpoint, params=None):
         if params is None:
