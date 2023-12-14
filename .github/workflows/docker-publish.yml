@@ -76,6 +76,7 @@ jobs:
 
       - name: Check if GCE instance exists
         run: |
+          gcloud config set project $PROJECT_ID
           if gcloud compute instances describe $GCE_INSTANCE_NAME --zone=$GCE_INSTANCE_ZONE; then
             echo "INSTANCE_EXISTS=true" >> $GITHUB_ENV
           else
