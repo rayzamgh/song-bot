@@ -12,7 +12,7 @@ env:
   INSTANCE_TEMPLATE_NAME : instance-template-1
 
 jobs:
-  build-and-push:
+  build-and-push-image:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
