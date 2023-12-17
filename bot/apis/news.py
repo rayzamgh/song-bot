@@ -31,9 +31,7 @@ class GameSpotAPI:
         self.api_key = api_key
         self.BASE_URL = "http://www.gamespot.com/api/"
 
-    async def _get(self, endpoint, params=None):
-        if params is None:
-            params = {}
+    async def _get(self, endpoint, params={}):
         headers = {
             "User-Agent": "PostmanRuntime/7.28.4",
             "Accept": "application/json",
@@ -43,8 +41,8 @@ class GameSpotAPI:
         params["format"] = "json"
         
         async with aiohttp.ClientSession() as session:
-            print("HHAAAAAAAAAAAAAAAAAAAAAAAAAAAAHH")
-            print(f"{self.BASE_URL}{endpoint}/")
+            print("HHAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHparams")
+            print(params)
             async with session.get(f"{self.BASE_URL}{endpoint}/", params=params, headers=headers) as response:
                 if response.status != 200:
                     raise aiohttp.HttpProcessingError(code=response.status, message=response.reason)
