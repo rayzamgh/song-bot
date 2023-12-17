@@ -31,7 +31,11 @@ class GameSpotAPI:
         self.api_key = api_key
         self.BASE_URL = "http://www.gamespot.com/api/"
 
-    async def _get(self, endpoint, params={}):
+    async def _get(self, endpoint, params=None):
+        
+        if params == None:
+            params = {}
+
         headers = {
             "User-Agent": "PostmanRuntime/7.28.4",
             "Accept": "application/json",
@@ -98,6 +102,9 @@ class GameSpotAPI:
             response = await self.get_latest_games()
         else:
             response = await self.get_latest_releases()
+
+        print("RAW RESPONSE!")
+        print(response)
 
         outp = construct_text(response, self.TOPIC_STRUCTURES[topic])
 

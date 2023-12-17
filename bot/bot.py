@@ -75,7 +75,7 @@ class SongBot(Bot):
             )
 
     # Scheduled message from GameSpot (every 9 hours)
-    @tasks.loop(minutes=3)
+    @tasks.loop(hours=22)
     async def gamespot_scheduled_message(self):
 
         print("Scheduled gamestop!")
