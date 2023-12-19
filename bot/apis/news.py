@@ -2,6 +2,7 @@ import aiohttp
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from enum import Enum
+import random
 
 class GameSpotAPI:
     BASE_URL = "http://www.gamespot.com/api/"
@@ -106,7 +107,21 @@ class GameSpotAPI:
         print("RAW RESPONSE!")
         print(response)
 
-        outp = construct_text(response, self.TOPIC_STRUCTURES[topic])
+        try:
+            outp = construct_text(response, self.TOPIC_STRUCTURES[topic])
+        except:
+            
+            topic_choice = [
+                "pembunuhan munir",
+                "jatuhnya roman empire",
+                "jatuhnya prussian empire",
+                "filsuf lama",
+                "greek gods",
+                "persian gods",
+                "game final fantasy",
+            ]
+
+            outp = f"ngobrol soal ini yuk : {random.choice(topic_choice)}"
 
         print("outputted gamespot!")
         print(outp)

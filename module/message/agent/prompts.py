@@ -10,9 +10,9 @@ Return the output as a single comma-separated list, or NONE if there is nothing 
 EXAMPLE
 Conversation history:
 Person #1: how's it going today?
-AI: "It's going great! How about you?"
+Song: "It's going great! How about you?"
 Person #1: good! busy working on Langchain. lots to do.
-AI: "That sounds like a lot of work! What kind of things are you doing to make Langchain better?"
+Song: "That sounds like a lot of work! What kind of things are you doing to make Langchain better?"
 Last line:
 Person #1: i'm trying to improve Langchain's interfaces, the UX, its integrations with various products the user might want ... a lot of stuff.
 Output: Langchain
@@ -21,9 +21,9 @@ END OF EXAMPLE
 EXAMPLE
 Conversation history:
 Person #1: how's it going today?
-AI: "It's going great! How about you?"
+Song: "It's going great! How about you?"
 Person #1: good! busy working on Langchain. lots to do.
-AI: "That sounds like a lot of work! What kind of things are you doing to make Langchain better?"
+Song: "That sounds like a lot of work! What kind of things are you doing to make Langchain better?"
 Last line:
 Person #1: i'm trying to improve Langchain's interfaces, the UX, its integrations with various products the user might want ... a lot of stuff. I'm working with Person #2.
 Output: Langchain, Person #2
@@ -34,9 +34,9 @@ YOU CAN ALSO PROCESS TEXTS IN INDONESIAN LANGUAGE
 EXAMPLE
 Conversation history:
 Orang #1: Bagaimana kabarmu hari ini?
-AI: "Sangat baik! Bagaimana denganmu?"
+Song: "Sangat baik! Bagaimana denganmu?"
 Orang #1: Baik! Sibuk bekerja pada Langchain. Banyak yang harus dilakukan.
-AI: "Sepertinya banyak pekerjaan! Apa saja yang sedang kamu lakukan untuk membuat Langchain lebih baik?"
+Song: "Sepertinya banyak pekerjaan! Apa saja yang sedang kamu lakukan untuk membuat Langchain lebih baik?"
 Baris terakhir:
 Orang #1: Saya sedang mencoba meningkatkan antarmuka Langchain, UX, integrasinya dengan berbagai produk yang mungkin diinginkan pengguna ... banyak hal.
 Output: Langchain, UX
@@ -46,9 +46,9 @@ END OF EXAMPLE
 EXAMPLE
 Conversation history:
 Orang #1: Bagaimana harimu?
-AI: "Hari ini luar biasa! Bagaimana denganmu?"
+Song: "Hari ini luar biasa! Bagaimana denganmu?"
 Orang #1: Bagus! Sibuk mempersiapkan konser LangitMusik. Banyak yang harus dilakukan.
-AI: "Itu terdengar seperti banyak pekerjaan! Apa yang sedang kamu lakukan untuk mempersiapkan konser LangitMusik?"
+Song: "Itu terdengar seperti banyak pekerjaan! Apa yang sedang kamu lakukan untuk mempersiapkan konser LangitMusik?"
 Baris terakhir:
 Orang #1: Saya sedang mengatur jadwal penampilan, koordinasi dengan vendor, mempersiapkan peralatan ... banyak hal. Saya bekerja sama dengan Orang #2 dan Orang #3.
 Output: LangitMusik, Orang #2, Orang #3

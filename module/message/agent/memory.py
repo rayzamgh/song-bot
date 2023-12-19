@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 from langchain.memory.entity import BaseEntityStore
 from google.cloud import firestore
 from langchain.memory import ConversationEntityMemory
+from langchain.memory.chat_memory import BaseChatMemory
 
 from langchain.schema import (
     AIMessage,
@@ -17,6 +18,29 @@ from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage, get_buffer_string
 from langchain.chains import LLMChain
+
+from typing_extensions import Literal
+
+class SongMessage(BaseMessage):
+    """A Message from Song."""
+
+    example: bool = False
+    """Whether this Message is being passed in to the model as part of an example 
+        conversation.
+    """
+
+    type: Literal["song"] = "song"
+
+
+class HumanMessage(BaseMessage):
+    """A Message from a human."""
+
+    example: bool = False
+    """Whether this Message is being passed in to the model as part of an example 
+        conversation.
+    """
+
+    type: str = "human"
 
 
 class FirestoreEntityStore(BaseEntityStore):
@@ -111,11 +135,11 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
             return messages
         return []
 
-    def add_user_message(self, message: str) -> None:
-        self.add_message(HumanMessage(content=message))
+    def add_user_message(self, message: str, discord_username: str) -> None:
+        self.add_message(HumanMessage(content=message, type=discord_username))
 
     def add_ai_message(self, message: str) -> None:
-        self.add_message(AIMessage(content=message))
+        self.add_message(SongMessage(content=message))
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Firestore"""
@@ -226,3 +250,49 @@ class ChatConversationEntityMemory(ConversationEntityMemory):
         # Save the updated summary to the entity store
         self.entity_store.set(name, output.strip())
 
+
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+        """
+        Save context from this conversation history to the entity store.
+
+        Generates a summary for each entity in the entity cache by prompting
+        the model, and saves these summaries to the entity store.
+        """
+
+        """Save context from this conversation to buffer."""
+        input_str, output_str = self._get_input_output(inputs, outputs)
+        self.chat_memory.add_user_message(input_str, inputs["discord_username"])
+        self.chat_memory.add_ai_message(output_str)
+
+
+        if self.input_key is None:
+            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
+        else:
+            prompt_input_key = self.input_key
+
+        # Extract an arbitrary window of the last message pairs from
+        # the chat history, where the hyperparameter k is the
+        # number of message pairs:
+        buffer_string = get_buffer_string(
+            self.buffer[-self.k * 2 :],
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+        input_data = inputs[prompt_input_key]
+
+        # Create an LLMChain for predicting entity summarization from the context
+        chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
+
+        # Generate new summaries for entities and save them in the entity store
+        for entity in self.entity_cache:
+            # Get existing summary if it exists
+            existing_summary = self.entity_store.get(entity, "")
+            output = chain.predict(
+                summary=existing_summary,
+                entity=entity,
+                history=buffer_string,
+                input=input_data,
+            )
+            # Save the updated summary to the entity store
+            self.entity_store.set(entity, output.strip())

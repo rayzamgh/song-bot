@@ -354,7 +354,7 @@ class SongAgent:
 
         input_message = self.prep_message(message, original_message)
         raw_output = self.executor.run(
-            input=input_message, **self.keeper.status | {"sender" : message.author.name, "sender_summary" : sender_summary})
+            input=input_message, discord_username=message.author.name, **self.keeper.status | {"sender" : message.author.name, "sender_summary" : sender_summary})
         raw_output = await self.talking_style_chain.arun(raw_output)
 
         raw_output = raw_output.replace("!", ".")
