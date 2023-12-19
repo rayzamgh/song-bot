@@ -4,6 +4,16 @@ from discord import Message
 import pytz
 import python_weather
 from bs4 import BeautifulSoup
+from langchain.schema import (
+    AIMessage,
+    BaseChatMessageHistory,
+    SystemMessage,
+    ChatMessage,
+    FunctionMessage,
+    BaseMessage,
+    HumanMessage,
+)
+from typing import Sequence
 
 def get_current_datetime() -> datetime:
     # Get the current time in UTC
@@ -74,3 +84,49 @@ async def get_current_weather(city):
     async with python_weather.Client(unit=python_weather.IMPERIAL) as client:
         weather = await client.get(city)
         return weather.current
+
+def get_buffer_string(
+    messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
+) -> str:
+    """Convert sequence of Messages to strings and concatenate them into one string.
+
+    Args:
+        messages: Messages to be converted to strings.
+        human_prefix: The prefix to prepend to contents of HumanMessages.
+        ai_prefix: THe prefix to prepend to contents of AIMessages.
+
+    Returns:
+        A single string concatenation of all input messages.
+
+    Example:
+        .. code-block:: python
+
+            from langchain.schema import AIMessage, HumanMessage
+
+            messages = [
+                HumanMessage(content="Hi, how are you?"),
+                AIMessage(content="Good, how are you?"),
+            ]
+            get_buffer_string(messages)
+            # -> "Human: Hi, how are you?\nAI: Good, how are you?"
+    """
+    string_messages = []
+    for m in messages:
+        if isinstance(m, HumanMessage):
+            role = human_prefix
+        elif isinstance(m, AIMessage):
+            role = ai_prefix
+        elif isinstance(m, SystemMessage):
+            role = "System"
+        elif isinstance(m, FunctionMessage):
+            role = "Function"
+        elif isinstance(m, ChatMessage):
+            role = m.role
+        else:
+            raise ValueError(f"Got unsupported message type {m.type} : {m}")
+        message = f"{role}: {m.content}"
+        if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
+            message += f"{m.additional_kwargs['function_call']}"
+        string_messages.append(message)
+
+    return "\n".join(string_messages)
