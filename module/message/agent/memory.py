@@ -21,30 +21,8 @@ from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage
 from langchain.chains import LLMChain
-from utils import get_buffer_string
+from utils import get_buffer_string, SongMessage, DiscordMessage
 
-from typing_extensions import Literal
-
-class SongMessage(AIMessage):
-    """A Message from Song."""
-
-    example: bool = False
-    """Whether this Message is being passed in to the model as part of an example 
-        conversation.
-    """
-
-    type: Literal["song"] = "song"
-
-
-class HumanMessage(BaseMessage):
-    """A Message from a human."""
-
-    example: bool = False
-    """Whether this Message is being passed in to the model as part of an example 
-        conversation.
-    """
-
-    type: str = "human"
 
 
 class FirestoreEntityStore(BaseEntityStore):
@@ -75,7 +53,7 @@ class FirestoreEntityStore(BaseEntityStore):
         return f"{self.key_prefix}:{self.session_id}"
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        key = key.lower() 
+        key = key.lower()
         doc_ref = self.firestore_client.document(
             f'{self.full_key_prefix}/{key}')
         doc = doc_ref.get()
@@ -131,13 +109,17 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
 
 
     def _message_from_dict(self, message: dict) -> BaseMessage:
+        
+        if "user" in message["data"]:
+            return DiscordMessage(**message["data"])
+        
         _type = message["type"]
         if _type == "human":
             return HumanMessage(**message["data"])
-        elif _type == "ai":
-            return AIMessage(**message["data"])
         elif _type == "song":
             return SongMessage(**message["data"])
+        elif _type == "ai":
+            return AIMessage(**message["data"])
         elif _type == "system":
             return SystemMessage(**message["data"])
         elif _type == "chat":
@@ -146,7 +128,6 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
             return FunctionMessage(**message["data"])
         else:
             raise ValueError(f"Got unexpected message type: {_type}")
-
 
     def messages_from_dict(self, messages: List[dict]) -> List[BaseMessage]:
         """Convert a sequence of messages from dicts to Message objects.
@@ -170,7 +151,7 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         return []
 
     def add_user_message(self, message: str, discord_username: str) -> None:
-        self.add_message(HumanMessage(content=message, type=discord_username))
+        self.add_message(DiscordMessage(content=message, user=discord_username))
 
     def add_ai_message(self, message: str) -> None:
         self.add_message(SongMessage(content=message))
@@ -332,3 +313,68 @@ class ChatConversationEntityMemory(ConversationEntityMemory):
             )
             # Save the updated summary to the entity store
             self.entity_store.set(entity, output.strip())
+
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Returns chat history and all generated entities with summaries if available,
+        and updates or clears the recent entity cache.
+
+        New entity name can be found when calling this method, before the entity
+        summaries are generated, so the entity cache values may be empty if no entity
+        descriptions are generated yet.
+        """
+
+        # Create an LLMChain for predicting entity names from the recent chat history:
+        chain = LLMChain(llm=self.llm, prompt=self.entity_extraction_prompt)
+
+        if self.input_key is None:
+            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
+        else:
+            prompt_input_key = self.input_key
+
+        # Extract an arbitrary window of the last message pairs from
+        # the chat history, where the hyperparameter k is the
+        # number of message pairs:
+        buffer_string = get_buffer_string(
+            self.buffer[-self.k * 2 :],
+            human_prefix=self.human_prefix,
+            ai_prefix=self.ai_prefix,
+        )
+
+        # Generates a comma-separated list of named entities,
+        # e.g. "Jane, White House, UFO"
+        # or "NONE" if no named entities are extracted:
+        output = chain.predict(
+            history=buffer_string,
+            input=inputs[prompt_input_key],
+        )
+
+        # If no named entities are extracted, assigns an empty list.
+        if output.strip() == "NONE":
+            entities = []
+        else:
+            # Make a list of the extracted entities:
+            entities = [w.strip() for w in output.split(",")]
+
+        # Make a dictionary of entities with summary if exists:
+        entity_summaries = {}
+
+        for entity in entities:
+            entity_summaries[entity] = self.entity_store.get(entity, "")
+
+        # Replaces the entity name cache with the most recently discussed entities,
+        # or if no entities were extracted, clears the cache:
+        self.entity_cache = entities
+
+        # Should we return as message objects or as a string?
+        if self.return_messages:
+            # Get last `k` pair of chat messages:
+            buffer: Any = self.buffer[-self.k * 2 :]
+        else:
+            # Reuse the string we made earlier:
+            buffer = buffer_string
+
+        return {
+            self.chat_history_key: buffer,
+            "entities": entity_summaries,
+        }

@@ -13,7 +13,29 @@ from langchain.schema import (
     BaseMessage,
     HumanMessage,
 )
+from typing_extensions import Literal
 from typing import Sequence
+
+class SongMessage(AIMessage):
+    """A Message from Song."""
+
+    example: bool = False
+    """Whether this Message is being passed in to the model as part of an example 
+        conversation.
+    """
+
+    type: Literal["song"] = "song"
+
+
+class DiscordMessage(HumanMessage):
+    """A Message from a human."""
+
+    example: bool = False
+    """Whether this Message is being passed in to the model as part of an example 
+        conversation.
+    """
+    user: str = "rayza"
+    type: str = "human"
 
 def get_current_datetime() -> datetime:
     # Get the current time in UTC
@@ -75,8 +97,6 @@ def format_html(html_message):
     # Extracting text from the parsed HTML
     text_only = soup.get_text(separator=' ', strip=True)
 
-    print(text_only)
-
 
 async def get_current_weather(city):
     """Fetches the current weather for the city specified in the environment."""
@@ -112,7 +132,9 @@ def get_buffer_string(
     """
     string_messages = []
     for m in messages:
-        if isinstance(m, HumanMessage):
+        if isinstance(m, DiscordMessage):
+            role = m.user
+        elif isinstance(m, HumanMessage):
             role = human_prefix
         elif isinstance(m, AIMessage):
             role = ai_prefix
@@ -123,7 +145,7 @@ def get_buffer_string(
         elif isinstance(m, ChatMessage):
             role = m.role
         else:
-            raise ValueError(f"Got unsupported message type {m.type} : {m}")
+            raise ValueError(f"Got unsupported message type {m.__class__.__name__} {isinstance(m, HumanMessage)}: {m}")
         message = f"{role}: {m.content}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"

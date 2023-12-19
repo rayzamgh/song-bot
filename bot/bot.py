@@ -44,7 +44,7 @@ class SongBot(Bot):
         print('Logged on as', self.user)
 
         # Start scheduled tasks for messaging and advancing song clock
-        self.gamespot_scheduled_message.start()
+        # self.gamespot_scheduled_message.start()
         self.convo_scheduled_message.start()
         self.advance_song_clock.start()
 
