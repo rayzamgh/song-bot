@@ -24,7 +24,7 @@ from langchain.chains import LLMChain
 
 from typing_extensions import Literal
 
-class SongMessage(BaseMessage):
+class SongMessage(AIMessage):
     """A Message from Song."""
 
     example: bool = False
