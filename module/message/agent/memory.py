@@ -19,8 +19,9 @@ from langchain.schema import (
 
 from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
-from langchain.schema import BaseMessage, get_buffer_string
+from langchain.schema import BaseMessage
 from langchain.chains import LLMChain
+from utils import get_buffer_string
 
 from typing_extensions import Literal
 
