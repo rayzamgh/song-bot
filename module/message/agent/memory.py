@@ -128,7 +128,7 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         self.key_prefix = key_prefix
         self.collection = self.firestore_client.collection(self.key_prefix)
 
-        
+
     def _message_from_dict(self, message: dict) -> BaseMessage:
         _type = message["type"]
         if _type == "human":
