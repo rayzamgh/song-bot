@@ -193,6 +193,8 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
 class ChatConversationEntityMemory(ConversationEntityMemory):
 
     human_entity_summarization_prompt: BasePromptTemplate
+    human_prefix: str = "Human"
+    ai_prefix: str = "Song"
 
     @property
     def memory_variables(self) -> List[str]:
