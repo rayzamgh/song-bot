@@ -8,6 +8,9 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.schema import (
     AIMessage,
     BaseChatMessageHistory,
+    SystemMessage,
+    ChatMessage,
+    FunctionMessage,
     BaseMessage,
     HumanMessage,
     _message_to_dict,
@@ -125,13 +128,43 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         self.key_prefix = key_prefix
         self.collection = self.firestore_client.collection(self.key_prefix)
 
+        
+    def _message_from_dict(self, message: dict) -> BaseMessage:
+        _type = message["type"]
+        if _type == "human":
+            return HumanMessage(**message["data"])
+        elif _type == "ai":
+            return AIMessage(**message["data"])
+        elif _type == "song":
+            return SongMessage(**message["data"])
+        elif _type == "system":
+            return SystemMessage(**message["data"])
+        elif _type == "chat":
+            return ChatMessage(**message["data"])
+        elif _type == "function":
+            return FunctionMessage(**message["data"])
+        else:
+            raise ValueError(f"Got unexpected message type: {_type}")
+
+
+    def messages_from_dict(self, messages: List[dict]) -> List[BaseMessage]:
+        """Convert a sequence of messages from dicts to Message objects.
+
+        Args:
+            messages: Sequence of messages (as dicts) to convert.
+
+        Returns:
+            List of messages (BaseMessages).
+        """
+        return [self._message_from_dict(m) for m in messages]
+
     @property
     def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Firestore"""
         query = self.collection.document(self.session_id).get()
         if query.exists:
             items = query.to_dict().get("messages", [])
-            messages = messages_from_dict(items)
+            messages = self.messages_from_dict(items)
             return messages
         return []
 
