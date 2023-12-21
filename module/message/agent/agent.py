@@ -221,7 +221,7 @@ class SongAgent:
         input_variables = list(set(SONG_SYSTEM_ENTITY_MEMORY_CONVERSATION_PROMPT_TEMPLATE.input_variables +
                                    SONG_ENTITY_MEMORY_CONVERSATION_PROMPT_TEMPLATE.input_variables)) + ["history"]
 
-        print("input_variables")
+        print("input_variables MAIN CHAIN")
         print(input_variables)
 
         final_prompt = ChatPromptTemplate(
@@ -256,7 +256,7 @@ class SongAgent:
         input_variables = list(set(SONG_SYSTEM_ENTITY_MEMORY_CONVERSATION_PROMPT_TEMPLATE.input_variables +
                                    SONG_ENTITY_MEMORY_CONVERSATION_PROMPT_TEMPLATE.input_variables)) + ["history", "agent_scratchpad"]
 
-        print("input_variables")
+        print("input_variables MAIN AGENT")
         print(input_variables)
 
         final_prompt = ChatPromptTemplate(

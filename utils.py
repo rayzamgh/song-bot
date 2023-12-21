@@ -101,9 +101,12 @@ def format_html(html_message):
 async def get_current_weather(city):
     """Fetches the current weather for the city specified in the environment."""
 
-    async with python_weather.Client(unit=python_weather.IMPERIAL) as client:
-        weather = await client.get(city)
-        return weather.current
+    try:
+        async with python_weather.Client(unit=python_weather.IMPERIAL) as client:
+            weather = await client.get(city)
+            return weather.current.description
+    except:
+        return "Gloomy"
 
 def get_buffer_string(
     messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"

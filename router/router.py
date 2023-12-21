@@ -6,9 +6,9 @@ from enum import Enum
 
 class Router:
 
-    class RouterValidator():
+    class RouterValidator:
 
-        class ChatValidatorErrors():
+        class ChatValidatorErrors:
             UNIDENTIFIED_INTENT_ERROR: Exception("Unidentified intent!")
 
         def __call__(self, func):
@@ -35,12 +35,19 @@ class Router:
 
     modules :dict[RouterTypes, BaseModule] = {}
 
-    def __init__(self):
+    _instance = None
 
-        self.modules = {
-            self.RouterTypes.MESSAGE: MessageModule(),
-            self.RouterTypes.COMMAND: CommandModule(),
-        }
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            print("FIRST INIT SINGLETON ROUTER")
+            cls._instance = super(Router, cls).__new__(cls, *args, **kwargs)
+            
+            cls._instance.modules = {
+                cls._instance.RouterTypes.MESSAGE: MessageModule(),
+                cls._instance.RouterTypes.COMMAND: CommandModule(),
+            }
+
+        return cls._instance
 
     @RouterValidator()
     async def route(

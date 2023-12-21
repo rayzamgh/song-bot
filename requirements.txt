@@ -12,3 +12,4 @@ python-weather==1.0.3
 arxiv==1.4.7
 pytz==2023.3
 pillow==10.1.0
+git+https://github.com/Sheppsu/discord-ext-listening

@@ -24,7 +24,7 @@ class SongKeeper:
             "place": "Jakarta",
             "current_time": current_formatted_time,
             "weather": {
-                "forecast": current_weather.description,
+                "forecast": current_weather,
                 "last_update": current_formatted_time
             }
         }
