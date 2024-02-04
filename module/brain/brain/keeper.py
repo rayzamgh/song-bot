@@ -13,7 +13,7 @@ class SongKeeper:
         """Initializes the SongKeeper's condition and environment."""
 
         current_formatted_time = get_current_formatted_datetime()
-        current_weather = asyncio.run(get_current_weather("Jakarta"))
+        current_weather = "Rainy"
 
         self.condition = {
             "mood": "chill",

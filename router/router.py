@@ -39,13 +39,14 @@ class Router:
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
-            print("FIRST INIT SINGLETON ROUTER")
+            print("created router")
             cls._instance = super(Router, cls).__new__(cls, *args, **kwargs)
             
             cls._instance.modules = {
                 cls._instance.RouterTypes.MESSAGE: MessageModule(),
                 cls._instance.RouterTypes.COMMAND: CommandModule(),
             }
+        print("returned router")
 
         return cls._instance
 

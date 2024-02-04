@@ -1,12 +1,16 @@
 
-from datetime import datetime, time
-from discord import Message
+
 import pytz
 import python_weather
+import threading
+import gc
+import time
+from datetime import datetime
+from discord import Message, VoiceClient
 from bs4 import BeautifulSoup
+from pydub import AudioSegment
 from langchain.schema import (
     AIMessage,
-    BaseChatMessageHistory,
     SystemMessage,
     ChatMessage,
     FunctionMessage,
@@ -15,6 +19,8 @@ from langchain.schema import (
 )
 from typing_extensions import Literal
 from typing import Sequence
+from discord.opus import DecodeManager
+from discord.sinks import RecordingException, Sink
 
 class SongMessage(AIMessage):
     """A Message from Song."""
@@ -155,3 +161,61 @@ def get_buffer_string(
         string_messages.append(message)
 
     return "\n".join(string_messages)
+
+
+def join_mp3s(mp3_buffers, new_mp3_filename):
+    combined = AudioSegment.empty()
+    for mp3_buffer in mp3_buffers:
+        # Load the MP3 file from the io.BytesIO object
+        audio = AudioSegment.from_file(mp3_buffer, format="mp3")
+        combined += audio
+    
+    # Export the combined audio to a new MP3 file
+    combined.export(new_mp3_filename, format="mp3")
+
+    # Open the saved file, read it as bytes, and return the bytes
+    with open(new_mp3_filename, 'rb') as file:
+        file_bytes = file.read()
+
+    return file_bytes
+
+class CustomDecodeManager(DecodeManager):
+    def stop(self):
+        while self.decoding:
+            time.sleep(0.1)
+            self.decoder = {}
+            gc.collect()
+            print("Decoder Process Killed")
+            print(len(self.decode_queue))
+            break
+        self._end_thread.set()
+
+class CustomVoiceClient(VoiceClient):
+    def start_recording(self, sink, callback, *args):
+        """
+        Custom start recording, some oaf forgot to put break in a while loop after decoding stops
+        """
+        if not self.is_connected():
+            raise RecordingException("Not connected to voice channel.")
+        if self.recording:
+            raise RecordingException("Already recording.")
+        if not isinstance(sink, Sink):
+            raise RecordingException("Must provide a Sink object.")
+
+        self.empty_socket()
+
+        self.decoder = CustomDecodeManager(self)
+        self.decoder.start()
+        self.recording = True
+        self.sink = sink
+        sink.init(self)
+
+        t = threading.Thread(
+            target=self.recv_audio,
+            args=(
+                sink,
+                callback,
+                *args,
+            ),
+        )
+        t.start()

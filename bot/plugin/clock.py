@@ -1,6 +1,7 @@
-from router import Router
+import discord
 from discord.ext.commands import Bot
-from module.message.agent import SongAgent
+from router import Router
+from module import SongBrain
 from discord.ext import tasks
 import random
 import discord
@@ -11,18 +12,14 @@ class ClockPlugin(Bot):
     # Static dictionary mapping channel names to their respective IDs
     CHANNEL_NAME_2_ID = CHANNEL_NAME_2_ID
 
-    def __init__(self, *args, **kwargs):
-        print("Clock initiated")
+    async def on_ready(self):
+        # Log to console
+        print('Clockin')
 
         # Setup for message routing and song management
         self.active_router: Router = Router()
 
-        self.chat_agent: SongAgent = self.active_router.modules[Router.RouterTypes.MESSAGE].song_agent
-        super().__init__(*args, **kwargs)
-
-    async def on_ready(self):
-        # Log to console
-        print('Clockin')
+        self.chat_agent: SongBrain = self.active_router.modules[Router.RouterTypes.MESSAGE].song_agent
 
         # Start scheduled tasks for messaging and advancing song clock
         self.advance_song_clock.start()

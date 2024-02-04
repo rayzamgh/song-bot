@@ -1,3 +1,4 @@
+import discord
 from discord.ext.commands import Bot
 from discord.ext import tasks
 from utils import get_day_state
@@ -10,16 +11,11 @@ class GamespotPlugin(Bot):
     # Static dictionary mapping channel names to their respective IDs
     CHANNEL_NAME_2_ID = CHANNEL_NAME_2_ID
 
-    def __init__(self, *args, **kwargs):
-        print("Gamespot initiated")
-        # Setup for GameSpot API utility
-        self.gamespot: GameSpotAPI = GameSpotAPI(os.environ.get("GAMESPOT_API_KEY"))
-
-        super().__init__(*args, **kwargs)
-
     async def on_ready(self):
         # Log to console
         print('Gamespottin')
+        # Setup for GameSpot API utility
+        self.gamespot: GameSpotAPI = GameSpotAPI(os.environ.get("GAMESPOT_API_KEY"))
 
         # Start scheduled tasks for messaging and advancing song clock
         self.gamespot_scheduled_message.start()
@@ -30,7 +26,7 @@ class GamespotPlugin(Bot):
 
         print("Scheduled gamestop!")
 
-        channel = self.get_channel(self.CHANNEL_NAME_2_ID["shmucks"])
+        channel = self.get_channel(self.CHANNEL_NAME_2_ID[os.getenv("ACTIVE_CHANNEL_NAME")])
         daystate = get_day_state()
 
         if channel and self.isactive:
@@ -39,7 +35,7 @@ class GamespotPlugin(Bot):
             print("=============== talking_point ===============")
             print(talking_point)
 
-            # Convert talking point into a message via SongAgent
+            # Convert talking point into a message via SongBrain
             talk = await self.chat_agent.atalk(talking_point)
 
             for key, value in extra_info.items():

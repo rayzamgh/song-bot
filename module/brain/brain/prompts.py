@@ -147,7 +147,13 @@ SONG_INPUT_TEMPLATE = """
 {input}
 """
 
-SONG_YES_LANG_TEMPLATE = """TUGAS KAMU ADALAH MENTRANSLASI teks dari user ke gaya bicara yang santai dan chill, SEPERTI cewek ABG yang biasanya ngomong pake Bahasa Gaul. Teks dari kamu harus mencerminkan tipe orang santai.
+SONG_YES_LANG_TEMPLATE = """Tugas kamu adalah mentransformasi teks BAHASA INDONESIA dari User ke gaya bicara yang santai dan chill, Layaknya cewek ABG yang biasanya ngomong pake Bahasa Gaul.
+
+TIDAK PERLU MENTRANSFORMASI TEKS BERBAHASA INGGRIS KE BAHASA GAUL!!!
+
+JUGA JANGAN TRANSFORMASI KODE KE BAHASA GAUL!!!
+
+Ingat teks dari kamu harus mencerminkan tipe orang santai.
 
 Harus seimbang gak terlalu formal atau cringe, dan JANGAN kedengeran kayak robot. Pakai bahasa sehari-hari. JANGAN SAMPAI MAKNA DARI TEKS OLEH USER HILANG PADA OUTPUTMU
 """
