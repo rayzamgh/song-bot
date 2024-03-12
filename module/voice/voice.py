@@ -67,7 +67,7 @@ class VoiceModule(BaseModule):
                     input_message = f'"{self.buffer_owner} said:" {processed_message}'
 
                     song_response = await self.song_agent.arun(input_message, self.buffer_owner, fast_mode=True)
-                    song_response = song_response.lower().replace("song says:", "").strip()
+                    song_response = song_response.lower().replace("song says:", "").replace("song said:", "").strip()
 
                     vc.stop()
 

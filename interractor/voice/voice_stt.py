@@ -37,10 +37,12 @@ class SpeechToTextInterractor(BaseInterractor):
             return response.results[0].alternatives[0].transcript if response.results else ""
         
         if self.vendor == "openai":
-            audio_file = open("current_mp3.mp3", "rb")
+            buffer = io.BytesIO(content)
+            buffer.name = "outp.mp3"
+            
             transcript = self.client.audio.transcriptions.create(
                 model="whisper-1",
-                file=audio_file,
+                file=buffer,
                 language="id",
                 prompt="Percakapan ini dalam Bahasa Indonesia, antara Rayza (yang ngomong) dengan Song (yang dituju)"
             )

@@ -3,7 +3,7 @@ import time
 import asyncio
 import wavelink
 from discord.ext import commands
-from utils import CustomVoiceClient
+from discord import VoiceClient
 from module import VoiceModule
 
 discord.opus._load_default()
@@ -34,7 +34,7 @@ class VoiceCog(commands.Cog):
     async def on_wavelink_node_ready(node: wavelink.Node):
         print(f"{node.identifier} is ready.") # print a message
 
-    async def once_done(self, sink: discord.sinks, channel: discord.TextChannel, vc : CustomVoiceClient, *args):  # Our voice client already passes these in.
+    async def once_done(self, sink: discord.sinks, channel: discord.TextChannel, vc : VoiceClient, *args):  # Our voice client already passes these in.
         start_time = time.perf_counter()
         recorded_users = {}
 
@@ -73,8 +73,10 @@ class VoiceCog(commands.Cog):
         if not voice:
             await ctx.send("You aren't in a voice channel!")
 
-        vc : CustomVoiceClient = await voice.channel.connect()  # Connect to the voice channel the author is in.
+        vc : VoiceClient = await voice.channel.connect()  # Connect to the voice channel the author is in.
         self.connections.update({ctx.guild.id: vc})  # Updating the cache with the guild and channel.
+
+        await ctx.send("before Initiating recording!!")
 
         try:
             while True:

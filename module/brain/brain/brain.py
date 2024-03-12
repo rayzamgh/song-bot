@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 from google.cloud import firestore
 from langchain.chat_models import ChatOpenAI
@@ -41,11 +42,11 @@ class SongBrain(ChainNeuron):
 
     if is_google:
         mem_model: BaseLanguageModel = ChatGoogleGenerativeAI(
-            model="gemini-pro", temperature=0, convert_system_message_to_human=True)
+            model="gemini-pro", temperature=0, convert_system_message_to_human=True, google_api_key=os.environ["GEMINI_API_KEY"])
         style_model: BaseLanguageModel = ChatGoogleGenerativeAI(
-            model="gemini-pro", temperature=0.8, convert_system_message_to_human=True)
+            model="gemini-pro", temperature=0.8, convert_system_message_to_human=True, google_api_key=os.environ["GEMINI_API_KEY"])
         chat_model: BaseLanguageModel = ChatGoogleGenerativeAI(
-            model="gemini-pro", temperature=0.3, convert_system_message_to_human=True)
+            model="gemini-pro", temperature=0.3, convert_system_message_to_human=True, google_api_key=os.environ["GEMINI_API_KEY"])
     else:
         mem_model: BaseLanguageModel = ChatOpenAI(
             model_name="gpt-3.5-turbo-16k", temperature=0)

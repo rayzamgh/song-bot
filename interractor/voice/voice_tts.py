@@ -17,7 +17,7 @@ class TextToSpeechInterractor(BaseInterractor):
 
         # Set up voice settings
         voice_settings = VoiceSettings(stability=0.46, similarity_boost=0.62, style=0.51, use_speaker_boost=True)
-        voice = Voice(voice_id='xf8xXQzmaXP5IpNOYtIU', settings=voice_settings)
+        voice = Voice(voice_id='ISUjskmTEvs1ZLX0Fy3E', settings=voice_settings)
 
         # Generate audio
         audio = generate(
