@@ -11,7 +11,6 @@ class SongKeeper:
 
     def __init__(self):
         """Initializes the SongKeeper's condition and environment."""
-
         current_formatted_time = get_current_formatted_datetime()
         current_weather = "Rainy"
 
