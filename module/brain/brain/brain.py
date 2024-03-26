@@ -31,7 +31,7 @@ from .neuron import AgentNeuron, ChainNeuron
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-is_google = True
+is_google = False # DO NOT TURN ON! STILL BUGGY
 
 class SongBrain(ChainNeuron):
     # Choose between ChainNeuron or AgentNeuron
@@ -53,7 +53,7 @@ class SongBrain(ChainNeuron):
         style_model: BaseLanguageModel = ChatOpenAI(
             model_name="ft:gpt-3.5-turbo-1106:personal::8IwKijay", temperature=0.8)
         chat_model: BaseLanguageModel = ChatOpenAI(
-            model_name="gpt-4-0125-preview", temperature=0.3)
+            model_name="gpt-4-turbo-preview", temperature=0.3)
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:

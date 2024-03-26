@@ -22,10 +22,10 @@ class SongBot(GamespotPlugin, BabblePlugin, ClockPlugin):
         # Log to console
         print('Logged on as', self.user)
 
-        # # Setup Plugins
-        # await ClockPlugin.on_ready(self)
-        # await BabblePlugin.on_ready(self)
-        # await GamespotPlugin.on_ready(self)
+        # Setup Plugins
+        await ClockPlugin.on_ready(self)
+        await BabblePlugin.on_ready(self)
+        await GamespotPlugin.on_ready(self)
         self.add_cog(VoiceCog(self))
 
     async def on_message(self, message):
