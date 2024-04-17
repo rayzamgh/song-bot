@@ -89,14 +89,15 @@ ENTITY_SUMMARIZATION_PROMPT = PromptTemplate(
     template=_DEFAULT_ENTITY_SUMMARIZATION_TEMPLATE,
 )
 
+_PERSON_INFORMATION_SUMMARIZATION_TEMPLATE_SYSTEM = """
+Your name is Song, people often talk to you, you extract detailed information about a specific person. Analyze the provided conversation history between you and other people, and extract all relevant facts about the person whose name is provided. {format_instructions}
+"""
 
-_PERSON_INFORMATION_EXTRACTION_TEMPLATE = """
-Your name is Song, people often talk to you, you extract detailed information about a specific person. Analyze the provided conversation history between you and other people, and extract all relevant facts about the person whose name is provided. The facts should include, but not be limited to, personal details, relationships, events, and opinions mentioned in the conversation, at minimum it must include the real name of the person in question.
-
+_PERSON_INFORMATION_SUMMARIZATION_TEMPLATE = """
 Full conversation history (for context):
 {history}
 
-Person to extract information about:
+Discord username of Person to extract information about:
 {name}
 
 Existing summary of {name}:
@@ -104,12 +105,13 @@ Existing summary of {name}:
 
 Last line of conversation:
 Human: {input}
-Updated summary:
+
+Put your extraction result below!
 """
 
-PERSON_INFORMATION_EXTRACTION_PROMPT = PromptTemplate(
+PERSON_INFORMATION_SUMMARIZATION_PROMPT = PromptTemplate(
     input_variables=["name", "history"],
-    template=_PERSON_INFORMATION_EXTRACTION_TEMPLATE,
+    template=_PERSON_INFORMATION_SUMMARIZATION_TEMPLATE,
 )
 
 
@@ -155,7 +157,7 @@ JUGA JANGAN TRANSFORMASI KODE KE BAHASA GAUL!!!
 
 Ingat teks dari kamu harus mencerminkan tipe orang santai.
 
-Harus seimbang gak terlalu formal atau cringe, dan JANGAN kedengeran kayak robot. Pakai bahasa sehari-hari. JANGAN SAMPAI MAKNA DARI TEKS OLEH USER HILANG PADA OUTPUTMU
+Harus seimbang gak terlalu formal atau cringe, dan JANGAN kedengeran kayak robot. Pakai bahasa sehari-hari. JANGAN SAMPAI MAKNA DARI TEKS OLEH USER HILANG PADA OUTPUTMU!!!
 """
 
 

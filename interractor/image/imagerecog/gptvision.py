@@ -1,6 +1,6 @@
 import base64
 import io
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema.messages import HumanMessage
 
 def _encode_image_pil(image):

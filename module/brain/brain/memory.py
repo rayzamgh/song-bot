@@ -17,13 +17,22 @@ from langchain.schema import (
     messages_from_dict,
 )
 
+from langchain.prompts import (
+    FewShotChatMessagePromptTemplate,
+    ChatPromptTemplate,
+)
 from langchain.memory.utils import get_prompt_input_key
 from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage
 from langchain.chains import LLMChain
 from utils import get_buffer_string, SongMessage, DiscordMessage
+from .prompts import _PERSON_INFORMATION_SUMMARIZATION_TEMPLATE_SYSTEM, _PERSON_INFORMATION_SUMMARIZATION_TEMPLATE
+from .pydantic.person import Profile
+from typing import List
 
-
+from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 class FirestoreEntityStore(BaseEntityStore):
     """Firestore-backed Entity store.
@@ -170,8 +179,7 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
     def clear(self) -> None:
         """Clear session memory from Firestore"""
         self.collection.document(self.session_id).delete()
-
-
+    
 class ChatConversationEntityMemory(ConversationEntityMemory):
 
     human_entity_summarization_prompt: BasePromptTemplate
@@ -186,87 +194,86 @@ class ChatConversationEntityMemory(ConversationEntityMemory):
         """
         return ["entities"]
     
-    def save_knowledge(self, inputs: Dict[str, Any]) -> None:
+    def save_knowledge(self, inputs: Dict[str, Any], type_knowledge: Optional[str] = None) -> None:
         """
-        Save knowledge from this conversation history to the entity store.
+        Saves knowledge based on the provided inputs. It supports different types of knowledge entities,
+        specifically handling 'person' type differently by storing it as a structured object.
 
-        Generates a summary for each entity in the entity cache by prompting
-        the model, and saves these summaries to the entity store.
+        Args:
+            inputs (Dict[str, Any]): The inputs containing the knowledge to be saved.
+            type_knowledge (Optional[str]): The type of the entity. If set to 'person', 
+                                            the data is saved using a structured format.
+
+        Returns:
+            None
         """
 
-
-        if self.input_key is None:
-            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
-        else:
-            prompt_input_key = self.input_key
-
-        # Extract an arbitrary window of the last message pairs from
-        # the chat history, where the hyperparameter k is the
-        # number of message pairs:
+        # Extract buffer string from recent interactions for context
         buffer_string = get_buffer_string(
-            self.buffer[-self.k * 2 :],
+            self.buffer[-self.k * 2:],
             human_prefix=self.human_prefix,
             ai_prefix=self.ai_prefix,
         )
 
-        input_data = inputs[prompt_input_key]
+        # Extract the main input data from inputs
+        input_data = inputs["input"]
+        name_data = inputs["name"]
 
-        # Create an LLMChain for predicting entity summarization from the context
-        chain = LLMChain(llm=self.llm, prompt=self.entity_summarization_prompt)
+        # Handle knowledge type 'person' with a structured data format
+        if type_knowledge == "person":
+            print(f"NAMEOF : {name_data}")
+            existing_summary = self.entity_store.get(name_data, "")
+            
+            # Define the parser for structured JSON output
+            parser = JsonOutputParser(pydantic_object=Profile)
+            
+            # Prepare a template and chain for processing
+            final_prompt = ChatPromptTemplate.from_messages([
+                ("system", _PERSON_INFORMATION_SUMMARIZATION_TEMPLATE_SYSTEM +
+                _PERSON_INFORMATION_SUMMARIZATION_TEMPLATE),
+            ])
+            chain = final_prompt | self.llm | parser
+            
+            # Invoke the chain with provided and formatted inputs
+            output = chain.invoke({
+                "summary": existing_summary,
+                "name": name_data,
+                "history": buffer_string,
+                "input": input_data,
+                "format_instructions": parser.get_format_instructions(),
+            })
 
-        # Generate new summaries for entities and save them in the entity store
-        for entity in self.entity_cache:
-            # Get existing summary if it exists
-            existing_summary = self.entity_store.get(entity, "")
-            output = chain.predict(
-                summary=existing_summary,
-                entity=entity,
-                history=buffer_string,
-                input=input_data,
-            )
-            # Save the updated summary to the entity store
-            self.entity_store.set(entity, output.strip())
-
-    def save_knowledge_person(self, inputs: Dict[str, Any]) -> None:
-        """
-        Save knowledge from this conversation history to the entity store.
-
-        Generates a summary for each entity in the entity cache by prompting
-        the model, and saves these summaries to the entity store.
-        """
-
-
-        if self.input_key is None:
-            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
+            # Debugging output
+            print("====================OUTPUT====================")
+            print(output)
+            print("====================OUTPUT====================")
+            
+            # Save the structured output in the entity store
+            self.entity_store.set(name_data, output)
+        
+        # Handle other types of knowledge
         else:
-            prompt_input_key = self.input_key
+            # Chain for general entity summarization
+            chain = self.entity_summarization_prompt | self.llm
+            
+            # Determine entities to process
+            if name_data is None:
+                entities = self.entity_cache
+            else:
+                entities = [name_data]
 
-        # Extract an arbitrary window of the last message pairs from
-        # the chat history, where the hyperparameter k is the
-        # number of message pairs:
-        buffer_string = get_buffer_string(
-            self.buffer[-self.k * 2 :],
-            human_prefix=self.human_prefix,
-            ai_prefix=self.ai_prefix,
-        )
-
-        input_data = inputs[prompt_input_key]
-        name = inputs["name"]
-
-        # Create an LLMChain for predicting entity summarization from the context
-        chain = LLMChain(llm=self.llm, prompt=self.human_entity_summarization_prompt)
-
-        # Get existing summary if it exists
-        existing_summary = self.entity_store.get(name, "")
-        output = chain.predict(
-            summary=existing_summary,
-            name=name,
-            history=buffer_string,
-            input=input_data,
-        )
-        # Save the updated summary to the entity store
-        self.entity_store.set(name, output.strip())
-
+            # Process each entity
+            for entity in entities:
+                existing_summary = self.entity_store.get(entity, "")
+                output = chain.invoke({
+                    "summary": existing_summary,
+                    "entity": entity,
+                    "history": buffer_string,
+                    "input": input_data,
+                })
+                
+                # Save the summarization result
+                self.entity_store.set(entity, output.strip())
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """

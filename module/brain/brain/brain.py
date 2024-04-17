@@ -1,10 +1,10 @@
 import os
 from typing import Dict
 from google.cloud import firestore
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_community.llms import OpenAI
 from langchain.base_language import BaseLanguageModel
-from langchain.utilities import WikipediaAPIWrapper, GoogleSearchAPIWrapper, ArxivAPIWrapper
+from langchain_community.utilities import WikipediaAPIWrapper, GoogleSearchAPIWrapper, ArxivAPIWrapper
 from langchain.chains import LLMChain
 from langchain.prompts.chat import (ChatPromptTemplate,
                                     HumanMessagePromptTemplate,
@@ -16,9 +16,10 @@ from langchain.prompts import (
     FewShotChatMessagePromptTemplate,
     ChatPromptTemplate,
 )
+from google.generativeai.types.safety_types import HarmBlockThreshold, HarmCategory
 from .prompts import (ENTITY_SUMMARIZATION_PROMPT,
                       ENTITY_EXTRACTION_PROMPT,
-                      PERSON_INFORMATION_EXTRACTION_PROMPT,
+                      PERSON_INFORMATION_SUMMARIZATION_PROMPT,
                       SONG_PREFIX,
                       SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
                       SONG_INPUT_TEMPLATE,
@@ -27,11 +28,12 @@ from .prompts import (ENTITY_SUMMARIZATION_PROMPT,
 from .memory import FirestoreEntityStore, FirestoreChatMessageHistory, ChatConversationEntityMemory
 from .keeper import SongKeeper
 from .neuron import AgentNeuron, ChainNeuron
+from .utils import trim_quotes
 
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-is_google = False # DO NOT TURN ON! STILL BUGGY
+is_google = True # DO NOT TURN ON! STILL BUGGY
 
 class SongBrain(ChainNeuron):
     # Choose between ChainNeuron or AgentNeuron
@@ -40,20 +42,33 @@ class SongBrain(ChainNeuron):
     """
     _instance = None  # Class attribute to hold the single instance
 
+    mem_model: BaseLanguageModel = ChatOpenAI(
+        model_name="gpt-4-turbo-preview",
+        temperature=0.2)
+    
+    chat_model: BaseLanguageModel = ChatOpenAI(
+        model_name="gpt-4",
+        temperature=0.7)
+    
     if is_google:
-        mem_model: BaseLanguageModel = ChatGoogleGenerativeAI(
-            model="gemini-pro", temperature=0, convert_system_message_to_human=True, google_api_key=os.environ["GEMINI_API_KEY"])
         style_model: BaseLanguageModel = ChatGoogleGenerativeAI(
-            model="gemini-pro", temperature=0.8, convert_system_message_to_human=True, google_api_key=os.environ["GEMINI_API_KEY"])
-        chat_model: BaseLanguageModel = ChatGoogleGenerativeAI(
-            model="gemini-pro", temperature=0.3, convert_system_message_to_human=True, google_api_key=os.environ["GEMINI_API_KEY"])
+            model="gemini-1.5-pro-latest",
+            temperature=0.7,
+            top_p=0.95,
+            convert_system_message_to_human=True,
+            google_api_key=os.environ["GEMINI_API_KEY"],
+            safety_settings={
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            },
+            HarmCategory="new")
     else:
-        mem_model: BaseLanguageModel = ChatOpenAI(
-            model_name="gpt-3.5-turbo-16k", temperature=0)
         style_model: BaseLanguageModel = ChatOpenAI(
-            model_name="ft:gpt-3.5-turbo-1106:personal::8IwKijay", temperature=0.8)
-        chat_model: BaseLanguageModel = ChatOpenAI(
-            model_name="gpt-4-turbo-preview", temperature=0.3)
+            model_name="gpt-4",
+            temperature=0.7)
+        
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -97,7 +112,7 @@ class SongBrain(ChainNeuron):
                                                    chat_history_key="history",
                                                    chat_memory=message_history,
                                                    entity_summarization_prompt=ENTITY_SUMMARIZATION_PROMPT,
-                                                   human_entity_summarization_prompt=PERSON_INFORMATION_EXTRACTION_PROMPT,
+                                                   human_entity_summarization_prompt=PERSON_INFORMATION_SUMMARIZATION_PROMPT,
                                                    entity_extraction_prompt=ENTITY_EXTRACTION_PROMPT,
                                                    return_messages=True,
                                                    entity_store=FirestoreEntityStore(
@@ -111,10 +126,6 @@ class SongBrain(ChainNeuron):
         """
 
         examples = [
-            {
-                "input": "Hahaha, bener juga tuh, gue emang agak terlalu sabi ya. Makasih udah mengingetin, Rayza. Gue bakal coba lebih chill lagi ke depannya.",
-                "output": "Haha, iya kadang2 gue emg kelewatan, thanks udh ngingetin ya, Rayza. Gua coba lebih chill lagi kedepannya."
-            },
             {
                 "input": "Haha, makasih banget, Rayza, udah cerita yang detail tentang kuliahmu. Gue seneng banget liat semangat dan dedikasimu dalam belajar dan berorganisasi. Pastinya, seimbangin antara akademik dan sosial tuh penting banget buat hidupin masa mahasiswa. Terus tetep semangat ya dan semoga sukses ngejar impian di masa depan. Makasih juga udah share linknya, nanti gue cek ya!",
                 "output": "Wkwk, makasih, Ray, udh cerita kuliah lu. Gue seneng aja sihh liat dedikasi looo belajar sama organisasi gitu gitu. Susah dan penting sih yaa yang kayak gitu gitu tuh. Mangat terus yak ngejar impian lo."
@@ -165,21 +176,17 @@ class SongBrain(ChainNeuron):
         )
 
         llm_chain = LLMChain(
-            llm=self.style_model,
+            llm=self.chat_model,
             prompt=final_prompt
         )
         return llm_chain
 
-    def add_knowledge(self, input, type="generic"):
+    def add_knowledge(self, inputs, type_knowledge="generic"):
         """
         Manually adds knowledge to bot
         """
-
-        if type == "generic":
-            self.main_memory.save_knowledge(input)
-        elif type == "person":
-            self.main_memory.save_knowledge_person(input)
-
+        self.main_memory.save_knowledge(inputs, type_knowledge=type_knowledge)
+        
     async def arun(self, message: str, author: str, fast_mode=False) -> str:
         """
         Process a new message and generate an appropriate response using the chat chain, async.
@@ -192,27 +199,18 @@ class SongBrain(ChainNeuron):
         print(f"You are speaking to {author}")
         print(sender_summary)
 
-
-        if not fast_mode:        
-            self.add_knowledge({"input" : message, "name": author}, type="person")
+        if not fast_mode:
+            self.add_knowledge({"input" : message, "name": author}, type_knowledge="person")
 
             raw_output = self.executor.run(
-                input=message, discord_username=author, **self.keeper.status | {
-                    "sender" : author, 
-                    "sender_summary" : sender_summary
-                    })
-            raw_output = await self.talking_style_chain.arun(raw_output)
+                input=message, discord_username=author, **{**self.keeper.status, "sender" : author, "sender_summary" : sender_summary})
+            # raw_output = await self.talking_style_chain.arun(raw_output)
 
         else:
             raw_output = self.fast_executor.run(
-                input=message, discord_username=author, **self.keeper.status | {
-                    "sender" : author, 
-                    "sender_summary" : sender_summary,
-                    "entities" : "",
-                    "history" : []
-                    })
+                input=message, discord_username=author, **{**self.keeper.status, "sender" : author, "sender_summary" : sender_summary, "entities" : "", "history" : []})
 
-        return raw_output
+        return trim_quotes(raw_output)
 
     async def atalk(self, talking_topic) -> str:
         """
