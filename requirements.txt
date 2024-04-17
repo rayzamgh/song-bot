@@ -55,17 +55,6 @@ frozenlist==1.4.1
 fsspec==2023.12.2
 future==0.18.3
 geoip2==4.8.0
-google-ai-generativelanguage==0.4.0
-google-api-core==2.15.0
-google-api-python-client==2.86.0
-google-auth==2.25.2
-google-auth-httplib2==0.2.0
-google-cloud==0.34.0
-google-cloud-core==2.3.2
-google-cloud-firestore==2.11.0
-google-cloud-speech==2.23.0
-google-generativeai==0.5.0
-googleapis-common-protos==1.62.0
 greenlet==3.0.1
 grpcio==1.53.0
 grpcio-health-checking==1.53.0
