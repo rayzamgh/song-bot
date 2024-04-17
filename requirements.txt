@@ -23,7 +23,6 @@ cffi==1.16.0
 channels==4.0.0
 charset-normalizer==3.3.2
 chroma-hnswlib==0.7.3
-chromadb==0.4.10
 cloudpathlib==0.16.0
 colorama==0.4.6
 coloredlogs==15.0.1
