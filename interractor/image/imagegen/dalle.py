@@ -23,5 +23,5 @@ class DalleInteractor:
     def _convert_activity_to_prompt(self, activity):
         # This method should convert the bot's activity into a text prompt suitable for DALL-E.
         # This is a placeholder function; you'll need to implement the actual conversion logic.
-        return f"A depiction of a playful black haired young adult asian girl, with glasses, doing : {activity}"
+        return f"A realistic photogenic HD, good looking picture of a playful black haired young adult asian girl, with glasses, doing : {activity}"
 

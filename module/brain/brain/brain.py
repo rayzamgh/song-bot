@@ -33,7 +33,7 @@ from .utils import trim_quotes
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-is_google = True # DO NOT TURN ON! STILL BUGGY
+is_google = False # DO NOT TURN ON! STILL BUGGY
 
 class SongBrain(ChainNeuron):
     # Choose between ChainNeuron or AgentNeuron

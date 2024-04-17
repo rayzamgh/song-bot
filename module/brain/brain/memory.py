@@ -216,8 +216,8 @@ class ChatConversationEntityMemory(ConversationEntityMemory):
         )
 
         # Extract the main input data from inputs
-        input_data = inputs["input"]
-        name_data = inputs["name"]
+        input_data = inputs.get("input", None)
+        name_data = inputs.get("name", None)
 
         # Handle knowledge type 'person' with a structured data format
         if type_knowledge == "person":
