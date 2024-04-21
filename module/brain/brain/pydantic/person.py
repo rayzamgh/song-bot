@@ -36,6 +36,7 @@ class LifeContext(BaseModel, extra=Extra.allow):
 
 class Profile(BaseModel, extra=Extra.allow):
     basicInformation: BasicInformation = Field(description="Basic information about the person")
+    notableInformation: list = Field(description="A list of notable interesting information about the person, can be about anything in general, put in contextual information of said person here")
     personalityAndInterests: PersonalityAndInterests = Field(description="Personality traits and interests")
     lifeContext: LifeContext = Field(description="Context of the person's life")
     dislikedTopics: str = Field(description="Topics the person dislikes, separated by commas")
