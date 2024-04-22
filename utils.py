@@ -55,7 +55,7 @@ def get_day_state() -> str:
     # Get the current time in the specified timezone
     current_datetime : datetime = get_current_datetime()
 
-    # Get the current hour
+    # Get the hour
     current_hour = current_datetime.hour
 
     # Determine the day state based on the current hour
