@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-# load all environment variables
+# Load all environment variables
 print("Loading envs")
 load_dotenv(override=True)
 
