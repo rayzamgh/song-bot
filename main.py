@@ -1,12 +1,11 @@
 import os
 from dotenv import load_dotenv
-from discord.ext import commands
 
 # load all environment variables
 print("Loading envs")
 load_dotenv(override=True)
 
-from discord import Intents, Bot
+from discord import Intents
 from bot import SongBot
 
 intents = Intents.all()
