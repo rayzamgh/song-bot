@@ -19,8 +19,6 @@ from langchain.schema import (
 )
 from typing_extensions import Literal
 from typing import Sequence
-from discord.opus import DecodeManager
-from discord.sinks import RecordingException, Sink
 
 class SongMessage(AIMessage):
     """A Message from Song."""
