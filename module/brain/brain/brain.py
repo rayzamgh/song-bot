@@ -67,7 +67,7 @@ class SongBrain(ChainNeuron):
     else:
         style_model: BaseLanguageModel = ChatOpenAI(
             model_name="gpt-4",
-            temperature=0.7)
+            temperature=0.4)
         
 
     def __new__(cls, *args, **kwargs):
@@ -158,7 +158,8 @@ class SongBrain(ChainNeuron):
 
         llm_chain = LLMChain(
             llm=self.style_model,
-            prompt=final_prompt
+            prompt=final_prompt,
+            verbose=True
         )
 
         return llm_chain
