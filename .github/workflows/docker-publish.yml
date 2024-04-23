@@ -25,13 +25,13 @@ jobs:
     - name: Setup gcloud CLI
       uses: google-github-actions/setup-gcloud@v0.2.0
       with:
-        service_account_key: ${{ secrets.GCR_KEY }}
+        service_account_key: ${{ secrets.BASE64_GA_GCR_CREDENTIALS }}
         project_id: portfolio-web-249407
 
     - name: Write Google Application Credentials to File
       run: |
         mkdir -p credentials
-        echo -n '${{ secrets.APP_GCP_CREDENTIALS }}' > credentials/portfolio-web-249407-6a45031230cc.json
+        echo -n '${{ secrets.JSON_APP_GCP_CREDENTIALS }}' > credentials/portfolio-web-249407-6a45031230cc.json
       
     - name: Configure Docker to use the gcloud command-line tool as a credential helper
       run: gcloud --quiet auth configure-docker
@@ -73,7 +73,7 @@ jobs:
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v0.2.0
         with:
-          service_account_key: ${{ secrets.GCR_KEY }}
+          service_account_key: ${{ secrets.BASE64_GA_GCR_CREDENTIALS }}
           project_id: ${{ env.PROJECT_ID }}
 
       - name: Check if GCE instance exists
