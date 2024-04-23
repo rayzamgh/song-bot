@@ -18,7 +18,6 @@ class SongBot(GamespotPlugin, BabblePlugin, ClockPlugin):
         # Setup for message routing and song management
         self.active_router: Router = Router()
 
-
         # Log to console
         print('Logged on as', self.user)
 

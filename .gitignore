@@ -1,6 +1,9 @@
 # Ignore .env file
 .env
 
+# Ignore credentials folder
+credentials/
+
 __pycache__
 *.pyc
 *.pyo
