@@ -2,7 +2,7 @@ import os
 from typing import Dict
 from google.cloud import firestore
 from langchain_openai import ChatOpenAI
-from langchain_community.llms import OpenAI
+from langchain_cohere import ChatCohere
 from langchain.base_language import BaseLanguageModel
 from langchain_community.utilities import WikipediaAPIWrapper, GoogleSearchAPIWrapper, ArxivAPIWrapper
 from langchain.chains import LLMChain
@@ -33,7 +33,6 @@ from .utils import trim_quotes
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-is_google = False # DO NOT TURN ON! STILL BUGGY
 
 class SongBrain(ChainNeuron):
     # Choose between ChainNeuron or AgentNeuron
@@ -42,33 +41,67 @@ class SongBrain(ChainNeuron):
     """
     _instance = None  # Class attribute to hold the single instance
 
-    mem_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-4-turbo-preview",
-        temperature=0.2)
-    
-    chat_model: BaseLanguageModel = ChatOpenAI(
-        model_name="gpt-4",
-        temperature=0.7)
-    
-    if is_google:
-        style_model: BaseLanguageModel = ChatGoogleGenerativeAI(
-            model="gemini-1.5-pro-latest",
-            temperature=0.7,
-            top_p=0.95,
-            convert_system_message_to_human=True,
-            google_api_key=os.environ["GEMINI_API_KEY"],
-            safety_settings={
-                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            },
-            HarmCategory="new")
-    else:
-        style_model: BaseLanguageModel = ChatOpenAI(
-            model_name="gpt-4",
-            temperature=0.4)
-        
+    MODELSET_OPENAI = 1
+    MODELSET_GOOGLE = 2
+    MODELSET_COHERE = 3
+
+    model_set = {
+        1 : {
+            "mem_model" : ChatOpenAI(
+                model_name="gpt-4-turbo-preview",
+                temperature=0.2),
+            "chat_model" : ChatOpenAI(
+                model_name="gpt-4",
+                temperature=0.7),
+            "talk_model" : ChatOpenAI(
+                model_name="gpt-4",
+                temperature=0.7),
+            "style_model" : ChatOpenAI(
+                model_name="gpt-4",
+                temperature=0.4)
+        },
+        2 : {
+            "mem_model" : ChatOpenAI(
+                model_name="gpt-4-turbo-preview",
+                temperature=0.2),
+            "chat_model" : ChatOpenAI(
+                model_name="gpt-4",
+                temperature=0.7),
+            "talk_model" : ChatOpenAI(
+                model_name="gpt-4",
+                temperature=0.7),
+            "style_model" : ChatGoogleGenerativeAI(
+                model="gemini-1.5-pro-latest",
+                temperature=0.7,
+                top_p=0.95,
+                convert_system_message_to_human=True,
+                google_api_key=os.environ["GEMINI_API_KEY"],
+                safety_settings={
+                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                },
+                HarmCategory="new")
+        },
+        3 : {
+            "mem_model" : ChatOpenAI(
+                model_name="gpt-4-turbo-preview",
+                temperature=0.2),
+            "chat_model" : ChatCohere(
+                model="command-r-plus",
+                temperature=0.7,
+                connectors=[{"id":"web-search","options":{"site":"wikipedia.org"}}]
+                ),
+            "talk_model" : ChatOpenAI(
+                model_name="gpt-4-turbo-preview",
+                temperature=0.7),
+            "style_model" : ChatCohere(
+                model="command-r-plus",
+                temperature=0.7
+                ),
+        }
+    }
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -80,6 +113,14 @@ class SongBrain(ChainNeuron):
             # Prevent reinitialization
             return
         self._initialized = True
+
+        modelset = self.MODELSET_COHERE
+        
+        # Initialize Models
+        self.mem_model : BaseLanguageModel = self.model_set[modelset]["mem_model"]
+        self.chat_model : BaseLanguageModel = self.model_set[modelset]["chat_model"]
+        self.talk_model : BaseLanguageModel = self.model_set[modelset]["talk_model"]
+        self.style_model : BaseLanguageModel = self.model_set[modelset]["style_model"]
 
         # Your existing initialization code
         self.keeper: SongKeeper = self.load_keeper()
@@ -177,7 +218,7 @@ class SongBrain(ChainNeuron):
         )
 
         llm_chain = LLMChain(
-            llm=self.chat_model,
+            llm=self.talk_model,
             prompt=final_prompt
         )
         return llm_chain
@@ -205,6 +246,8 @@ class SongBrain(ChainNeuron):
 
             raw_output = self.executor.run(
                 input=message, discord_username=author, **{**self.keeper.status, "sender" : author, "sender_summary" : sender_summary})
+            
+            # NOT NEEDED FOR NOW
             # raw_output = await self.talking_style_chain.arun(raw_output)
 
         else:

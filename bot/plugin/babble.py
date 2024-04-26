@@ -27,7 +27,7 @@ class BabblePlugin(Bot):
 
 
     # Scheduled conversation starter
-    @tasks.loop(hours=8)
+    @tasks.loop(hours=40)
     async def convo_scheduled_message(self):
         print("Scheduled convo!")
 

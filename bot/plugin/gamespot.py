@@ -21,7 +21,7 @@ class GamespotPlugin(Bot):
         self.gamespot_scheduled_message.start()
 
     # Scheduled message from GameSpot (every 9 hours)
-    @tasks.loop(hours=10)
+    @tasks.loop(hours=20)
     async def gamespot_scheduled_message(self):
 
         print("Scheduled gamestop!")
