@@ -49,6 +49,7 @@ jobs:
         GAMESPOT_API_KEY: ${{ secrets.GAMESPOT_API_KEY }}
         ACTIVE_CHANNEL_NAME: ${{ secrets.ACTIVE_CHANNEL_NAME }}
         ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
       run: |
         docker build \
           --build-arg GOOGLE_API_KEY=$GOOGLE_API_KEY \
@@ -62,6 +63,7 @@ jobs:
           --build-arg GAMESPOT_API_KEY=$GAMESPOT_API_KEY \
           --build-arg ACTIVE_CHANNEL_NAME=$ACTIVE_CHANNEL_NAME \
           --build-arg ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY \
+          --build-arg COHERE_API_KEY=$COHERE_API_KEY \
           -t $IMAGE_NAME .
         docker tag $IMAGE_NAME $GCR_HOST/$IMAGE_NAME-latest
         docker push $GCR_HOST/$IMAGE_NAME-latest
