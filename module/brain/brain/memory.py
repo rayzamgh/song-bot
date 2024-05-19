@@ -26,7 +26,7 @@ from langchain.prompts.base import BasePromptTemplate
 from langchain.schema import BaseMessage
 from langchain.chains import LLMChain
 from utils import get_buffer_string, SongMessage, DiscordMessage
-from .prompts import _PERSON_INFORMATION_SUMMARIZATION_TEMPLATE_SYSTEM, _PERSON_INFORMATION_SUMMARIZATION_TEMPLATE
+from .promptsv3 import TemplateManager
 from .pydantic.person import Profile
 from typing import List
 
@@ -41,6 +41,7 @@ class FirestoreEntityStore(BaseEntityStore):
     firestore_client: Any
     session_id: str = "song_brain"
     key_prefix: str = "memory_store"
+    tm: TemplateManager = None
 
     def __init__(
         self,
@@ -56,7 +57,11 @@ class FirestoreEntityStore(BaseEntityStore):
 
         self.session_id = session_id
         self.key_prefix = key_prefix
+        self.tm = TemplateManager()
 
+    class Config:
+        arbitrary_types_allowed = True
+        
     @property
     def full_key_prefix(self) -> str:
         return f"{self.key_prefix}:{self.session_id}"
@@ -115,6 +120,7 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         self.firestore_client = client
         self.key_prefix = key_prefix
         self.collection = self.firestore_client.collection(self.key_prefix)
+        self.tm = TemplateManager()
 
 
     def _message_from_dict(self, message: dict) -> BaseMessage:
@@ -183,8 +189,12 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
 class ChatConversationEntityMemory(ConversationEntityMemory):
 
     human_entity_summarization_prompt: BasePromptTemplate
+    tm : TemplateManager
     human_prefix: str = "Human"
     ai_prefix: str = "Song"
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def memory_variables(self) -> List[str]:
@@ -229,8 +239,8 @@ class ChatConversationEntityMemory(ConversationEntityMemory):
             
             # Prepare a template and chain for processing
             final_prompt = ChatPromptTemplate.from_messages([
-                ("system", _PERSON_INFORMATION_SUMMARIZATION_TEMPLATE_SYSTEM +
-                _PERSON_INFORMATION_SUMMARIZATION_TEMPLATE),
+                ("system", self.tm.get_template_string("person_information_summarization_template_system") +
+                self.tm.get_template_string("person_information_summarization_template")),
             ])
             chain = final_prompt | self.llm | parser
             

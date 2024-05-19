@@ -67,7 +67,7 @@ class VoiceCog(commands.Cog):
 
     @commands.command()
     async def talk(self, ctx):
-        print("talking")
+        print("Talking")
         voice = ctx.author.voice
 
         if not voice:
@@ -94,6 +94,41 @@ class VoiceCog(commands.Cog):
 
                 vc.stop_recording()
                 await ctx.send("Stopping recording!!")
+        except KeyboardInterrupt:
+            print("Interrupted by user")
+
+    @commands.command()
+    async def small_talk(self, ctx):
+        # DONT FORGET TO ADD:
+        # RELATIONSHIP METER WITH EACH PERSON?
+        # RANDOMIZE THE SMALL TALK
+        
+        print("Small talking")
+        voice = ctx.author.voice
+
+        if not voice:
+            await ctx.send("You aren't in a voice channel!")
+            return
+
+        vc: VoiceClient = await voice.channel.connect()  # Connect to the voice channel the author is in.
+        self.connections.update({ctx.guild.id: vc})  # Updating the cache with the guild and channel.
+
+        await ctx.send("Initiating small talk!")
+
+        try:
+            while True:
+                # Generate a random small talk message
+                small_talk_message = await self.voice_module.generate_small_talk()
+
+                # Convert the small talk message to speech
+                speech_file = await self.voice_module.text_to_speech(small_talk_message)
+
+                # Play the speech file in the voice channel
+                vc.play(discord.FFmpegPCMAudio(speech_file))
+
+                # Wait for a certain duration before generating the next small talk message
+                await asyncio.sleep(30)  # Adjust the duration as needed
+
         except KeyboardInterrupt:
             print("Interrupted by user")
 

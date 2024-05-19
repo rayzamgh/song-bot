@@ -11,12 +11,12 @@ def _encode_image_pil(image):
     return img_str
 
 def extract_image(image, prompt):
-    ''' Extracts information from a PIL Image using GPT-4 Vision Preview model '''
+    ''' Extracts information from a PIL Image using GPT-4o model '''
     # Encode the image to base64
     img_base64 = _encode_image_pil(image)
 
     # Initialize the ChatOpenAI model
-    chat = ChatOpenAI(model="gpt-4-vision-preview", max_tokens=1024)
+    chat = ChatOpenAI(model="gpt-4o", max_tokens=1024)
 
     # Create the message with the image and the prompt
     msg = chat.invoke(

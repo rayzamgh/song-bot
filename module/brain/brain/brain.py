@@ -17,14 +17,15 @@ from langchain.prompts import (
     ChatPromptTemplate,
 )
 from google.generativeai.types.safety_types import HarmBlockThreshold, HarmCategory
-from .prompts import (ENTITY_SUMMARIZATION_PROMPT,
-                      ENTITY_EXTRACTION_PROMPT,
-                      PERSON_INFORMATION_SUMMARIZATION_PROMPT,
-                      SONG_PREFIX,
-                      SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
-                      SONG_INPUT_TEMPLATE,
-                      SONG_YES_LANG_TEMPLATE,
-                      SONG_TALK_TEMPLATE)
+# from .promptsv2 import (ENTITY_SUMMARIZATION_PROMPT,
+#                       ENTITY_EXTRACTION_PROMPT,
+#                       PERSON_INFORMATION_SUMMARIZATION_PROMPT,
+#                       SONG_PREFIX,
+#                       SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
+#                       SONG_INPUT_TEMPLATE,
+#                       SONG_YES_LANG_TEMPLATE,
+#                       SONG_TALK_TEMPLATE)
+from .promptsv3 import TemplateManager
 from .memory import FirestoreEntityStore, FirestoreChatMessageHistory, ChatConversationEntityMemory
 from .keeper import SongKeeper
 from .neuron import AgentNeuron, ChainNeuron
@@ -48,27 +49,27 @@ class SongBrain(ChainNeuron):
     model_set = {
         1 : {
             "mem_model" : ChatOpenAI(
-                model_name="gpt-4-turbo-preview",
+                model_name="gpt-4o",
                 temperature=0.2),
             "chat_model" : ChatOpenAI(
-                model_name="gpt-4",
+                model_name="gpt-4o",
                 temperature=0.7),
             "talk_model" : ChatOpenAI(
-                model_name="gpt-4",
+                model_name="gpt-4o",
                 temperature=0.7),
             "style_model" : ChatOpenAI(
-                model_name="gpt-4",
+                model_name="gpt-4o",
                 temperature=0.4)
         },
         2 : {
             "mem_model" : ChatOpenAI(
-                model_name="gpt-4-turbo-preview",
+                model_name="gpt-4o",
                 temperature=0.2),
             "chat_model" : ChatOpenAI(
-                model_name="gpt-4",
+                model_name="gpt-4o",
                 temperature=0.7),
             "talk_model" : ChatOpenAI(
-                model_name="gpt-4",
+                model_name="gpt-4o",
                 temperature=0.7),
             "style_model" : ChatGoogleGenerativeAI(
                 model="gemini-1.5-pro-latest",
@@ -86,15 +87,15 @@ class SongBrain(ChainNeuron):
         },
         3 : {
             "mem_model" : ChatOpenAI(
-                model_name="gpt-4-turbo-preview",
-                temperature=0.2),
+                model_name="gpt-4o",
+                temperature=0.3),
             "chat_model" : ChatCohere(
                 model="command-r-plus",
                 temperature=0.7,
                 connectors=[{"id":"web-search","options":{"site":"wikipedia.org"}}]
                 ),
             "talk_model" : ChatOpenAI(
-                model_name="gpt-4-turbo-preview",
+                model_name="gpt-4o",
                 temperature=0.7),
             "style_model" : ChatCohere(
                 model="command-r-plus",
@@ -116,6 +117,8 @@ class SongBrain(ChainNeuron):
 
         modelset = self.MODELSET_COHERE
         
+        self.tm = TemplateManager()
+        
         # Initialize Models
         self.mem_model : BaseLanguageModel = self.model_set[modelset]["mem_model"]
         self.chat_model : BaseLanguageModel = self.model_set[modelset]["chat_model"]
@@ -129,6 +132,7 @@ class SongBrain(ChainNeuron):
         self.fast_executor = self.load_fast_neuron()
         self.talk_chain = self.load_talk_chain()
         self.talking_style_chain = self.load_talking_style_chain()
+
 
         # Super init
         super().__init__()
@@ -148,13 +152,14 @@ class SongBrain(ChainNeuron):
 
         message_history = FirestoreChatMessageHistory(client=firestore_client)
         main_memory = ChatConversationEntityMemory(llm=self.mem_model,
+                                                   tm=TemplateManager(),
                                                    k=5,
                                                    input_key="input",
                                                    chat_history_key="history",
                                                    chat_memory=message_history,
-                                                   entity_summarization_prompt=ENTITY_SUMMARIZATION_PROMPT,
-                                                   human_entity_summarization_prompt=PERSON_INFORMATION_SUMMARIZATION_PROMPT,
-                                                   entity_extraction_prompt=ENTITY_EXTRACTION_PROMPT,
+                                                   entity_summarization_prompt=self.tm.create_prompt_template("entity_summarization_template", ["entity", "summary", "history", "input"]),
+                                                   human_entity_summarization_prompt=self.tm.create_prompt_template("person_information_summarization_template", ["name", "history"]),
+                                                   entity_extraction_prompt=self.tm.create_prompt_template("entity_extraction_template", ["history", "input"]),
                                                    return_messages=True,
                                                    entity_store=FirestoreEntityStore(
                                                        client=firestore_client))
@@ -191,7 +196,7 @@ class SongBrain(ChainNeuron):
 
         final_prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", SONG_YES_LANG_TEMPLATE),
+                ("system", self.tm.get_template_string("song_yes_lang_template")),
                 few_shot_prompt,
                 ("human", "{input}"),
             ]
@@ -212,7 +217,7 @@ class SongBrain(ChainNeuron):
 
         final_prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", SONG_TALK_TEMPLATE),
+                ("system", self.tm.get_template_string("song_talk_template")),
                 ("human", "{input}"),
             ]
         )

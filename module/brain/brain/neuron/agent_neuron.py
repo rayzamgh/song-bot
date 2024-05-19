@@ -15,18 +15,20 @@ from langchain.prompts import (
 from utils import get_original_message
 from interractor.image import ImageInterractor
 from PIL import Image
-from ..prompts import (ENTITY_SUMMARIZATION_PROMPT,
-                      ENTITY_EXTRACTION_PROMPT,
-                      SONG_PREFIX,
-                      SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
-                      SONG_INPUT_TEMPLATE,
-                      SONG_YES_LANG_TEMPLATE,
-                      SONG_TALK_TEMPLATE)
+# from ..promptsv2 import (ENTITY_SUMMARIZATION_PROMPT,
+#                       ENTITY_EXTRACTION_PROMPT,
+#                       SONG_PREFIX,
+#                       SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
+#                       SONG_INPUT_TEMPLATE,
+#                       SONG_YES_LANG_TEMPLATE,
+#                       SONG_TALK_TEMPLATE)
+from ..promptsv3 import TemplateManager
 
 class AgentNeuron():
 
     def __init__(self):
         self.toolkit: List[Tool] = self.load_toolkit()
+        self.tm = TemplateManager()
     
     def load_toolkit(self) -> List[Tool]:
         """
@@ -61,12 +63,12 @@ class AgentNeuron():
 
         SONG_SYSTEM_ENTITY_MEMORY_CONVERSATION_PROMPT_TEMPLATE = PromptTemplate(
             input_variables=["entities", "sender", "sender_summary"] + list(self.keeper.status.keys()),
-            template=SONG_PREFIX + SONG_ENTITY_MEMORY_CONVERSATION_TEMPLATE,
+            template=self.tm.get_template_string("song_prefix") + self.tm.get_template_string("song_entity_memory_conversation_template"),
         )
 
         SONG_ENTITY_MEMORY_CONVERSATION_PROMPT_TEMPLATE = PromptTemplate(
             input_variables=["input"],
-            template=SONG_INPUT_TEMPLATE,
+            template=self.tm.get_template_string("song_input_template"),
         )
 
         messages = [
