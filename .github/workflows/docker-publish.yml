@@ -31,7 +31,7 @@ jobs:
     - name: Write Google Application Credentials to File
       run: |
         mkdir -p credentials
-        echo -n '${{ secrets.JSON_APP_GCP_CREDENTIALS }}' > credentials/portfolio-web-249407-6a45031230cc.json
+        echo -n '${{ secrets.JSON_APP_GCP_CREDENTIALS }}' > credentials/portfolio-web-249407-0ef2955b621d.json
       
     - name: Configure Docker to use the gcloud command-line tool as a credential helper
       run: gcloud --quiet auth configure-docker
