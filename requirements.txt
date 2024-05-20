@@ -10,6 +10,7 @@ google-cloud-core==2.3.2
 google-cloud-firestore==2.11.0
 google-cloud-speech==2.23.0
 googleapis-common-protos==1.62.0
+cohere==5.3.3
 elevenlabs==0.2.27
 langchain==0.1.16
 langchain-community==0.0.33
